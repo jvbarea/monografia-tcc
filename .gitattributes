@@ -1,0 +1,5 @@
+# Fim de linha LF no repositório para todos os arquivos de texto, em qualquer
+# sistema; evita diffs inteiros por troca de CRLF entre Windows e Linux.
+* text=auto eol=lf
+*.png binary
+*.pdf binary

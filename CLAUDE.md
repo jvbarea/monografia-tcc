@@ -6,9 +6,11 @@ repositório substituiu o Prism em 08/11/2026. O usuário desta sessão é o Jo�
 
 Contexto, fatos, números e plano de trabalho ficam no repositório de código:
 
-- `../../Users/joaob/OneDrive/Documentos/2026/TCC/tcc-lora-infra/docs/plano-monografia-defesa.md`
-- `.../tcc-lora-infra/docs/diagnostico-monografia-2026-11-08.md` (fatos e números)
-- `.../tcc-lora-infra/docs/mapa-alteracoes-prism.md` (cada alteração, por lote)
+`C:/Users/joaob/OneDrive/Documentos/2026/TCC/tcc-lora-infra/docs/`:
+
+- `plano-monografia-defesa.md` (tarefas T0.1 a T4.4)
+- `diagnostico-monografia-2026-11-08.md` (fatos e números)
+- `mapa-alteracoes-prism.md` (cada alteração, por lote)
 
 ## Regras
 
