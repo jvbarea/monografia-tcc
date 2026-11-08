@@ -1,0 +1,32 @@
+# Auxiliares do LaTeX (gerados a cada compilação)
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.idx
+*.ilg
+*.ind
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.nav
+*.snm
+*.vrb
+*.xdv
+*.run.xml
+*.bcf
+*-blx.bib
+
+# PDF compilado: vem da Action (artefato) ou da compilação local; não versionar
+main.pdf
+
+# Editores e sistema
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

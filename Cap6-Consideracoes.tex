@@ -1,0 +1,65 @@
+\chapter{Considerações Preliminares} \label{cap:consideracoes}
+
+Até a presente etapa de desenvolvimento do trabalho, os esforços foram concentrados na consolidação da fundamentação teórica, na revisão bibliográfica e na especificação da arquitetura do sistema. O trabalho estabeleceu a base conceitual necessária para a integração segura de dispositivos IoT em redes LoRaWAN, definindo os papéis do nó sensor, do \textit{gateway} e da infraestrutura de \textit{backend}. 
+
+Durante a fase de especificação, foi possível justificar tecnicamente as escolhas das tecnologias que comporão o protótipo. Selecionou-se a família Ascon — na variante Ascon-128a (v1.2), de mesma estrutura de permutação do Ascon-AEAD128 padronizado — para garantir confidencialidade e integridade com baixo custo computacional, superando alternativas legadas em ambientes restritos. Em paralelo, a estratégia de aprendizado de máquina foi definida, optando-se por modelos de regressão temporal não supervisionados (utilizando os \textit{datasets} Tour Perret e GUARD) como mecanismo de detecção de anomalias operacionais.
+
+Na camada de segurança, os resultados do Capítulo~\ref{cap:desenvolvimento} respondem à questão colocada no Capítulo~\ref{cap:conceitos}, se a criptografia leve em \textit{software} compensa frente ao acelerador de AES presente nas placas. A implementação do Ascon-128a passou nos vetores oficiais, rejeitou as 4.907 adulterações aplicadas ao texto cifrado, aos dados associados, à \textit{tag} e ao \textit{nonce} nas duas placas, não realizou nenhuma alocação dinâmica, usou no máximo 436 bytes de pilha e cerca de 6,8~kB de \textit{Flash}, e manteve tempo de execução idêntico para cinco classes de entrada, o que corrobora a propriedade de tempo constante. A mensagem típica de 23 bytes é cifrada em 27~$\mu$s no ESP32 clássico e em 25~$\mu$s no ESP32-S3. Frente ao AES-128-GCM do próprio \textit{core}, o Ascon-128a foi mais rápido em todas as 1.200 execuções de cada placa, de 1,3 a 1,6 vez no ESP32 clássico e de 2,3 a 3,5 vezes no ESP32-S3, que é a placa de implantação. Nos dois chips a autenticação do GCM permanece em \textit{software} e o acelerador cobre só o bloco AES, e no ESP32-S3 o caminho por DMA tem custo fixo alto por chamada, o que explica a vantagem maior justamente onde ela importa.
+
+A biblioteca \textit{AsconSecure} leva esse resultado ao enlace. Cada mensagem acrescenta 20 bytes, um contador de 4 bytes em claro e a \textit{tag} de 16, a chave nasce no próprio nó e nunca sai dele por outro caminho que não a bancada, e o receptor rejeita repetições. O custo de processamento da camada é desprezível diante do rádio, os 27~$\mu$s da cifragem contra cerca de 87~ms de tempo no ar na configuração adotada, de modo que o custo real de proteger o enlace está nos bytes adicionais transmitidos, e não no algoritmo escolhido. Esse custo é o mesmo para qualquer AEAD com \textit{tag} de 128 bits, e a escolha pelo Ascon-128a se sustenta na memória, no tamanho de código, no tempo constante e no tempo de execução, não em uma economia de energia de transmissão.
+
+\section{Perspectivas de Continuidade}
+
+O presente trabalho estabelece uma arquitetura de segurança integrada para 
+redes LoRaWAN, combinando criptografia leve por meio do padrão Ascon e 
+detecção de anomalias via modelos de regressão temporal. Embora os objetivos 
+definidos para este projeto tenham sido tratados nas etapas descritas nos 
+capítulos anteriores, dentro das limitações ali declaradas, a natureza do 
+problema abre caminhos relevantes para investigações futuras.
+
+A perspectiva de maior interesse imediato diz respeito à portabilidade da 
+fase de inferência dos modelos treinados para o próprio gateway da rede. 
+Neste trabalho, o treinamento e a avaliação dos modelos são realizados em 
+ambiente computacional convencional, decisão justificada pelas restrições de 
+hardware incompatíveis com o processo de treinamento. Contudo, uma vez 
+obtido um modelo com desempenho satisfatório, torna-se pertinente investigar 
+se sua fase de inferência pode ser executada diretamente no gateway, 
+eliminando a necessidade de transmissão dos dados brutos para uma camada 
+externa de processamento.
+
+Essa investigação demandaria a análise da complexidade do modelo resultante 
+— em termos de número de parâmetros, tamanho serializado e tempo de 
+inferência — em relação às restrições de memória RAM e armazenamento em 
+\textit{flash} do hardware adotado. Ferramentas como o TensorFlow Lite for 
+Microcontrollers e a biblioteca \textit{emlearn} permitem a conversão de 
+modelos treinados em Python para código C otimizado, compatível com 
+microcontroladores como o ESP32 \cite{ray2022}. Técnicas de compressão como 
+quantização de pesos e poda de conexões poderiam ser aplicadas para reduzir 
+o custo computacional sem perda significativa de desempenho \cite{jacob2018}.
+
+Uma segunda perspectiva relevante envolve a extensão da abordagem de 
+detecção para incorporar dados rotulados de ataque, como os disponíveis no 
+\textit{dataset} GUARD. Com resultados de regressão consolidados sobre o 
+Tour Perret, seria possível investigar em que medida os resíduos produzidos 
+pelos modelos se comportam de forma diferenciada diante de \textit{frames} 
+reconhecidamente manipulados, abrindo caminho para uma avaliação mais 
+rigorosa da capacidade de detecção em cenários com ataques conhecidos.
+
+Por fim, a arquitetura proposta poderia ser estendida para contemplar 
+mecanismos de atualização contínua do modelo, permitindo que o sistema se 
+adapte a mudanças graduais no comportamento da rede — como variações 
+sazonais de sinal ou substituição de dispositivos — sem comprometer a 
+sensibilidade à detecção de anomalias. Essa capacidade de adaptação é 
+especialmente relevante em implantações de longa duração, características 
+de aplicações industriais e de cidades inteligentes.
+
+Na camada de segurança, três frentes ficam abertas. A primeira é a avaliação em uma rede LoRaWAN completa, com \textit{Network Server} e \textit{Application Server}, que é o cenário em que a lacuna de integridade fim a fim discutida no Capítulo~\ref{cap:especificacao} de fato se manifesta, e em que o custo adicional da camada, os 20 bytes de contador e \textit{tag} por mensagem, pode ser medido em tempo no ar e energia de transmissão em vez de calculado. A segunda é a migração para o Ascon-AEAD128 do SP 800-232 quando houver implementação estável para o ESP32, troca que a Tabela~\ref{tab:parametros_ascon} indica ser de constantes, sem efeito esperado sobre as medidas aqui apresentadas, mas que precisa ser confirmada. A terceira é a avaliação de canais laterais além do tempo, consumo de potência e emissão eletromagnética, que exigem bancada dedicada e ficaram fora do escopo. Vale ainda estudar o provisionamento de chaves em escala, já que o procedimento adotado, uma chave gerada em cada nó e copiada ao receptor na bancada, atende a um protótipo com poucos nós e não a uma implantação com dezenas deles.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Segurança Física do ESP32}
+A implementação Ascon-128a fornece confidencialidade e integridade para os dados em trânsito, mas a integridade do sistema como um todo depende do sigilo da chave criptográfica armazenada no nó sensor. Como dispositivos de borda (\textit{Edge}) operam em ambientes fisicamente hostis e não supervisionados, são alvos potenciais para ataques de extração de memória (\textit{Flash Dumping}).
+
+O escopo desta pesquisa concentrou-se na eficiência das primitivas criptográficas; para uma implantação real, porém, a segurança em nível de hardware é uma camada indispensável.
+
+Para mitigar essas vulnerabilidades físicas em desenvolvimentos futuros, recomenda-se a adoção dos mecanismos nativos de segurança da família ESP32 \cite{espressif2024flash} \cite{kosemen2021tamper}. A chave simétrica do Ascon pode ser protegida com \textit{Flash Encryption} sobre a partição não-volátil (NVS), com a chave mestre gravada nos \textit{eFuses} (OTP) e protegida contra leitura externa (\textit{Read Protect}); a Inicialização Segura (\textit{Secure Boot}), que verifica a assinatura do \textit{firmware} a cada inicialização, previne regravação maliciosa. Assim, a eficiência criptográfica do Ascon opera sobre uma base de hardware que protege os dados em repouso e o código contra acesso físico não autorizado.

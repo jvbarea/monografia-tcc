@@ -1,0 +1,36 @@
+# Compila a monografia a cada push e pull request e publica o PDF como artefato.
+# Quem não tem LaTeX instalado baixa o PDF em Actions > execução > Artifacts.
+name: Compilar PDF
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v4
+
+      - name: Compilar main.tex (pdflatex + bibtex via latexmk)
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          latexmk_use_lualatex: false
+          # O .latexmkrc do repositório já define pdf_mode e bibtex.
+          # -interaction=nonstopmode faz a compilação terminar mesmo com avisos;
+          # erros de verdade continuam derrubando a execução.
+          args: -pdf -interaction=nonstopmode -file-line-error
+
+      - name: Publicar o PDF
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: monografia-${{ github.sha }}
+          path: |
+            main.pdf
+            main.log
+          if-no-files-found: error
+          retention-days: 30
