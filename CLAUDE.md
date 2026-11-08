@@ -35,9 +35,12 @@ Contexto, fatos, números e plano de trabalho ficam no repositório de código:
 
 ## Compilação
 
-Sem LaTeX local (08/11/2026). A Action `Compilar PDF` roda a cada push e
-publica `main.pdf` e `main.log` como artefato. Local: MiKTeX + `latexmk`
-(`.latexmkrc` já configurado). Classe e `.bst` estão versionados.
+Local (desde 08/11/2026): MiKTeX + Strawberry Perl + `latexmk`
+(`.latexmkrc` já configurado); `latexmk -pdf -interaction=nonstopmode
+main.tex` na raiz, cerca de 20 s incremental. Conferir no `main.log` as
+linhas `Output written` e `undefined`. A Action `Compilar PDF` roda a cada
+push e publica `main.pdf` e `main.log` como artefato. Classe e `.bst` estão
+versionados. Compilar é do Claude; o João revisa o PDF.
 
 ## Impactos a sinalizar
 

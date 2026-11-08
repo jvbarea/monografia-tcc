@@ -32,18 +32,30 @@ camada criptográfica Ascon (Felipe) e detecção por aprendizado de máquina
 em *Actions > execução > Artifacts*. Se a compilação falhar, o `main.log`
 está no mesmo artefato.
 
-**Na própria máquina (Windows).** Instalar o MiKTeX
-(`winget install MiKTeX.MiKTeX`), deixar o MiKTeX instalar pacotes
-faltantes automaticamente na primeira compilação, e rodar na pasta do
-repositório:
+**Na própria máquina (Windows).** O `latexmk` é um script Perl e o MiKTeX
+não traz Perl, então são dois pacotes:
 
 ```powershell
+winget install MiKTeX.MiKTeX
+winget install StrawberryPerl.StrawberryPerl
+```
+
+Depois, ligar a instalação automática de pacotes e compilar na pasta do
+repositório (abrir um terminal novo para o PATH atualizar):
+
+```powershell
+initexmf --set-config-value "[MPM]AutoInstall=1"
 latexmk          # gera main.pdf
 latexmk -C       # limpa auxiliares e PDF
 ```
 
-O `.latexmkrc` já configura pdflatex e bibtex. A primeira compilação demora
-porque o MiKTeX baixa pacotes; as seguintes levam menos de um minuto.
+O `.latexmkrc` já configura pdflatex e bibtex. A primeira compilação leva
+uns 3 minutos porque o MiKTeX baixa pacotes; as seguintes, cerca de 20 s.
+
+**No VS Code.** Extensão LaTeX Workshop (`James-Yu.latex-workshop`), com os
+dois pacotes acima instalados. `Ctrl+Alt+B` compila, `Ctrl+Alt+V` abre o PDF
+ao lado, `Ctrl+clique` no PDF vai para a linha do `.tex`. Reiniciar o VS
+Code depois de instalar o Perl, para a extensão enxergar o PATH novo.
 
 ## Como trabalhar
 
