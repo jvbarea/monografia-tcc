@@ -21,6 +21,7 @@
 *.run.xml
 *.bcf
 *-blx.bib
+*.brf
 
 # PDF compilado: vem da Action (artefato) ou da compilação local; não versionar
 main.pdf
