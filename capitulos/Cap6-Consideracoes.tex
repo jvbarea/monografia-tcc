@@ -1,0 +1,13 @@
+\chapter{Considerações Preliminares} \label{cap:consideracoes}
+
+Até a presente etapa de desenvolvimento do trabalho, os esforços foram concentrados na consolidação da fundamentação teórica, na revisão bibliográfica e na especificação da arquitetura do sistema. O trabalho estabeleceu a base conceitual necessária para a integração segura de dispositivos IoT em redes LoRaWAN, definindo os papéis do nó sensor, do \textit{gateway} e da infraestrutura de \textit{backend}. 
+
+Durante a fase de especificação, foi possível justificar tecnicamente as escolhas das tecnologias que comporão o protótipo. Selecionou-se a família Ascon — na variante Ascon-128a (v1.2), de mesma estrutura de permutação do Ascon-AEAD128 padronizado — para garantir confidencialidade e integridade com baixo custo computacional, superando alternativas legadas em ambientes restritos. Em paralelo, a estratégia de aprendizado de máquina foi definida, optando-se por modelos de regressão temporal não supervisionados (utilizando os \textit{datasets} Tour Perret e GUARD) como mecanismo de detecção de anomalias operacionais.
+
+\input{felipe/cap6-conclusoes-ascon}
+
+\section{Perspectivas de Continuidade}
+
+\input{tadaki/cap6-perspectivas-ml}
+
+\input{felipe/cap6-perspectivas-ascon}

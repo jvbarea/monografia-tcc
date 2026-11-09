@@ -1,0 +1,42 @@
+O presente trabalho estabelece uma arquitetura de segurança integrada para 
+redes LoRaWAN, combinando criptografia leve por meio do padrão Ascon e 
+detecção de anomalias via modelos de regressão temporal. Embora os objetivos 
+definidos para este projeto tenham sido tratados nas etapas descritas nos 
+capítulos anteriores, dentro das limitações ali declaradas, a natureza do 
+problema abre caminhos relevantes para investigações futuras.
+
+A perspectiva de maior interesse imediato diz respeito à portabilidade da 
+fase de inferência dos modelos treinados para o próprio gateway da rede. 
+Neste trabalho, o treinamento e a avaliação dos modelos são realizados em 
+ambiente computacional convencional, decisão justificada pelas restrições de 
+hardware incompatíveis com o processo de treinamento. Contudo, uma vez 
+obtido um modelo com desempenho satisfatório, torna-se pertinente investigar 
+se sua fase de inferência pode ser executada diretamente no gateway, 
+eliminando a necessidade de transmissão dos dados brutos para uma camada 
+externa de processamento.
+
+Essa investigação demandaria a análise da complexidade do modelo resultante 
+— em termos de número de parâmetros, tamanho serializado e tempo de 
+inferência — em relação às restrições de memória RAM e armazenamento em 
+\textit{flash} do hardware adotado. Ferramentas como o TensorFlow Lite for 
+Microcontrollers e a biblioteca \textit{emlearn} permitem a conversão de 
+modelos treinados em Python para código C otimizado, compatível com 
+microcontroladores como o ESP32 \cite{ray2022}. Técnicas de compressão como 
+quantização de pesos e poda de conexões poderiam ser aplicadas para reduzir 
+o custo computacional sem perda significativa de desempenho \cite{jacob2018}.
+
+Uma segunda perspectiva relevante envolve a extensão da abordagem de 
+detecção para incorporar dados rotulados de ataque, como os disponíveis no 
+\textit{dataset} GUARD. Com resultados de regressão consolidados sobre o 
+Tour Perret, seria possível investigar em que medida os resíduos produzidos 
+pelos modelos se comportam de forma diferenciada diante de \textit{frames} 
+reconhecidamente manipulados, abrindo caminho para uma avaliação mais 
+rigorosa da capacidade de detecção em cenários com ataques conhecidos.
+
+Por fim, a arquitetura proposta poderia ser estendida para contemplar 
+mecanismos de atualização contínua do modelo, permitindo que o sistema se 
+adapte a mudanças graduais no comportamento da rede — como variações 
+sazonais de sinal ou substituição de dispositivos — sem comprometer a 
+sensibilidade à detecção de anomalias. Essa capacidade de adaptação é 
+especialmente relevante em implantações de longa duração, características 
+de aplicações industriais e de cidades inteligentes.

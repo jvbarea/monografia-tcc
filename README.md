@@ -10,21 +10,39 @@ camada criptográfica Ascon (Felipe) e detecção por aprendizado de máquina
 (Celso). Código e dados da infraestrutura:
 [tcc-lora-infra](https://github.com/jvbarea/tcc-lora-infra).
 
-## Arquivos
+## Estrutura
 
-| Arquivo | Conteúdo | Quem edita |
-|---|---|---|
-| `main.tex` | Capa, folha de rosto, resumo, siglas, inclusão dos capítulos, bibliografia | grupo |
-| `Cap1-Intro.tex` | Introdução, motivação, objetivos | grupo |
-| `Cap2-Conceitos.tex` | LoRa e LoRaWAN (João), criptografia leve (Felipe), aprendizado de máquina (Celso) | por seção |
-| `Cap3-Metodo.tex` | Arquitetura (João), datasets e modelos (Celso), biblioteca e testes do Ascon (Felipe) | por seção |
-| `Cap4-Especificacao.tex` | Requisitos da infraestrutura (João), da detecção (Celso), de segurança (Felipe) | por seção |
-| `Cap5-Desenvolvimento.tex` | Implementação e resultados das três frentes | por seção |
-| `Cap6-Consideracoes.tex` | Considerações finais e trabalhos futuros | grupo |
-| `abntex2-modelo-references.bib` | Bibliografia | quem cita |
-| `figuras/` | Figuras em PNG | quem usa |
-| `abntex2*.cls`, `*.sty`, `*.bst` | Classe abnTeX2, versionada junto para compilar igual em qualquer máquina | ninguém |
-| `ficha.pdf` | Ficha catalográfica provisória | grupo, após a defesa |
+Uma pasta por autor. Cada capítulo em `capitulos/` é um esqueleto (título,
+parágrafos de abertura) que faz `\input` dos fragmentos de cada autor, na
+ordem das seções. Assim cada um edita só a própria pasta e os conflitos de
+merge ficam restritos aos arquivos do grupo.
+
+```
+main.tex                  capa, resumo, siglas, inclusão dos capítulos      grupo
+capitulos/Cap1-Intro.tex  introdução inteira                                 grupo
+capitulos/Cap2..Cap6.tex  esqueletos com \input                              grupo
+capitulos/refs-comuns.bib entradas citadas por mais de uma frente            quem cita
+barea/                    infraestrutura LoRa (João)                         João
+felipe/                   criptografia leve e Ascon (Felipe)                 Felipe
+tadaki/                   detecção por aprendizado de máquina (Celso)        Celso
+<autor>/capN-*.tex        fragmentos, um por seção                           autor
+<autor>/refs.bib          entradas citadas só por esta frente                autor
+<autor>/figuras/          figuras das seções do autor                        autor
+<autor>/CLAUDE.md         regras e fontes da frente, para o Claude do autor  autor
+abntex2*, *.bst           classe abnTeX2, versionada para compilar igual     ninguém
+ficha.pdf                 ficha catalográfica provisória                     grupo, após a defesa
+```
+
+Para acrescentar uma seção nova: criar `<autor>/capN-nome.tex` e uma linha
+`\input{<autor>/capN-nome}` no esqueleto do capítulo, no lugar certo. Para
+citar: a entrada vai no `refs.bib` da própria pasta; se outra frente já cita
+a mesma chave, ela vai para `capitulos/refs-comuns.bib` (o bibtex avisa
+"repeated entry" se ficar nos dois). Figura nova: `<autor>/figuras/`, com o
+caminho completo no `\includegraphics`.
+
+A divisão foi feita em 08/11/2026 por corte nas fronteiras de seção; o PDF
+antes e depois tem as 107 páginas com o mesmo texto, sumário, listas e
+bibliografia.
 
 ## Como compilar
 

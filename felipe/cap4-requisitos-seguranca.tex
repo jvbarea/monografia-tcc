@@ -1,0 +1,94 @@
+\section{Requisitos de Segurança do Sistema criptográfico}
+\label{sec:requisitos_seguranca}
+\subsection{Segurança do Ascon-AEAD128 e da variante Ascon-128a}
+A camada criptográfica especificada nesta seção é adicional à proteção já oferecida pelo protocolo de comunicação. A especificação do LoRaWAN determina que a carga útil de aplicação seja cifrada fim a fim entre o dispositivo e o \textit{Application Server}, mas registra que a proteção de integridade não é fim a fim: o \textit{Network Server} pode alterar o conteúdo cifrado em trânsito, ainda que sem conseguir lê-lo, uma vez que detém a chave empregada no cálculo do código de integridade das mensagens. Por esse motivo, a própria norma recomenda que aplicações que exijam confidencialidade e integridade fim a fim empreguem soluções de segurança adicionais \cite{lorawan104}. É essa lacuna de integridade que a camada baseada em Ascon preenche neste trabalho.
+
+Para o uso seguro da cifra, este trabalho adota os requisitos operacionais especificados pelo NIST para o Ascon-AEAD128 \cite{nist800232}. Embora a implementação utilizada corresponda à variante Ascon-128a (versão 1.2), esses requisitos são adotados de forma conservadora como limites aplicáveis, uma vez que ambas as versões compartilham a mesma taxa de processamento e a mesma estrutura de permutação, conforme a Tabela~\ref{tab:parametros_ascon}, enquanto suas diferenças introduzem apenas sobrecarga constante. O primeiro requisito trata da geração da chave criptográfica, que deve seguir os padrões descritos no documento SP 800-133r2 \cite{barker2020nist133}, no qual é estabelecida a seguinte operação:
+
+\[
+K = U \oplus V,
+\]
+
+em que $U$ é uma cadeia de bits extraída de um Gerador de Bits Aleatórios (RBG - \textit{Random Bit Generator}) aprovado, e $V$ consiste em uma sequência de bits gerada independentemente de $U$, podendo ser composta inteiramente por zeros.
+
+As especificações para os geradores de bits aleatórios aprovados estão descritas no documento SP 800-90A \cite{barker2015nist90a}. Neste projeto, é utilizado um Gerador Determinístico de Bits Aleatórios (DRBG - \textit{Deterministic Random Bit Generator}) através do mecanismo CTR\_DRBG. Essa escolha justifica-se pelo fato de que a entropia bruta extraída diretamente do hardware pode conter vícios físicos, tornando indispensável um estágio secundário de tratamento e condicionamento algorítmico \cite{turan2018nist90b}. Dessa forma, a implementação fará uso da biblioteca nativa \textit{mbedTLS} do ESP32, que extrai a entropia verdadeira do periférico de hardware (TRNG) e a processa através do algoritmo CTR\_DRBG, garantindo uma saída perfeitamente balanceada para a geração da chave.
+
+Com base nesses elementos, os requisitos de segurança do Ascon-AEAD128 podem ser organizados em requisitos funcionais e não funcionais.
+
+\subsubsection{Requisitos funcionais}
+
+\begin{enumerate}
+    \item[RF1.] A implementação da biblioteca \textit{ascon-suite} deve ser validada previamente, conforme discutido na Seção \ref{subsec:validacao-ascon}.
+
+    \item[RF2.] A geração da chave criptográfica deve seguir os padrões descritos no documento SP 800-133r2 \cite{barker2020nist133}, adotando a operação $K = U \oplus V$, e empregar um gerador de bits aleatórios aprovado com força de segurança de, no mínimo, 128 bits \cite{nist800232}.
+
+    \item[RF3.] O sistema deve utilizar um Gerador Determinístico de Bits Aleatórios (DRBG - \textit{Deterministic Random Bit Generator}) através do mecanismo CTR\_DRBG para a geração de chaves criptográficas.
+
+    \item[RF4.] A implementação deve fazer uso da biblioteca nativa \textit{mbedTLS} do ESP32 para extrair a entropia verdadeira do periférico de hardware (TRNG) e processá-la através do algoritmo CTR\_DRBG.
+
+    \item[RF5.] A renovação da chave de um nó deve ser feita por novo provisionamento, onde descarta-se o estado criptográfico do dispositivo, gera-se nele uma chave nova, nas condições do RF2 ao RF4, e atualiza-se o registro correspondente no receptor. A chave nova deve ser gerada de forma independente da anterior, sem derivar dela nem ser transportada sob sua proteção, como exige o SP 800-133r2 para a substituição de chave comprometida \cite{barker2020nist133}. Como os gatilhos preventivos de renovação (RNF3 e RNF4) são inalcançáveis na operação prevista, conforme discutido ao final desta seção, a renovação é um procedimento de resposta a um incidente, e não de rotina.
+
+    \item[RF6.] Cada nó sensor deve possuir uma chave criptográfica própria, gerada e provisionada individualmente, de modo que o comprometimento físico de um nó não exponha o tráfego dos demais. Como a exigência de unicidade do \textit{nonce} se aplica a uma mesma chave, essa separação também restringe o escopo dessa garantia a um único dispositivo \cite{nist800232}.
+
+    \item[RF7.] A unicidade do \textit{nonce} exigida pelo RNF2 deve ser assegurada por um contador monotônico mantido em memória não volátil no próprio dispositivo, incrementado a cada operação de cifragem e persistido antes da transmissão da mensagem correspondente, de modo que uma interrupção de energia descarte valores em vez de repeti-los. Após uma reinicialização, a leitura do valor persistido deve preceder qualquer operação criptográfica. O contador não deve ser derivado de valores mantidos pela pilha de comunicação, para que a garantia de unicidade não dependa de decisões tomadas em outra camada.
+
+    \item[RF8.] A camada criptográfica deve detectar e rejeitar qualquer alteração da mensagem em trânsito, seja no texto cifrado, nos dados associados ou na própria \textit{tag} de autenticação. Em caso de falha na verificação de integridade, a decifragem deve retornar erro sem entregar à aplicação qualquer fragmento de texto claro \cite{nist800232}. Este requisito responde à lacuna descrita no início desta seção. A norma do LoRaWAN admite que o \textit{Network Server} altere o conteúdo cifrado em trânsito, ainda que sem conseguir lê-lo \cite{lorawan104}, e é a verificação da \textit{tag} pelo destinatário final que torna essa alteração detectável.
+
+    \item[RF9.] O receptor deve recusar mensagens cujo \textit{nonce} já tenha sido aceito, mantendo registro do maior valor recebido de cada dispositivo e descartando valores repetidos ou regressivos. O modo AEAD garante integridade, mas não frescor, um pacote válido retransmitido sem alteração é legítimo do ponto de vista criptográfico, e sua detecção depende de estado mantido no receptor. Este requisito complementa o RF7, que assegura a unicidade do \textit{nonce} na origem, estendendo a garantia ao destino.
+\end{enumerate}
+
+\subsubsection{Requisitos não funcionais}
+
+\begin{enumerate}
+    \item[RNF1.] A entropia bruta extraída diretamente do hardware não deve ser utilizada sem tratamento adicional, uma vez que pode conter vícios físicos (\textit{bias}), tornando indispensável um estágio secundário de condicionamento algorítmico \cite{turan2018nist90b}.
+
+    \item[RNF2.] A chave criptográfica deve ser mantida em sigilo absoluto e não deve ser empregada para outras finalidades, aliada à garantia de unicidade do \textit{nonce} para cada operação de encriptação \cite{nist800232}.
+
+    \item[RNF3.] Para \textit{tags} de autenticação cujo tamanho $\lambda$ (em bits) satisfaça a condição $64 \leq \lambda \leq 128$, a quantidade de falhas de decriptação não deve exceder $2^{\lambda - 32}$.
+
+    \item[RNF4.] O volume máximo de dados processados durante as rotinas de encriptação e decriptação, incluindo o \textit{nonce}, não deve ultrapassar $2^{54}$ bytes para uma mesma chave, devendo a chave ser obrigatoriamente renovada caso esse limite seja atingido. A chave também deve ser renovada quando o número de falhas de decriptação alcançar o limite estabelecido no RNF3 \cite{nist800232}.
+
+    \item[RNF5.] A \textit{tag} de autenticação deve ser utilizada em seu comprimento integral de 128 bits, não se aplicando a este trabalho a opção de truncamento prevista no padrão. Caso venha a ser adotada, o comprimento truncado não deve ser inferior a 32 bits, valores abaixo de 64 bits exigem análise de risco prévia, e o comprimento escolhido deve permanecer constante durante toda a vida útil da chave \cite{nist800232}.
+
+    \item[RNF6.] A operação de cifragem não deve realizar alocação dinâmica de memória, de modo a evitar fragmentação de \textit{heap} em dispositivos que operam por longos períodos sem reinicialização.
+
+    \item[RNF7.] O consumo de memória da operação de cifragem deve ser constante e independente do tamanho do \textit{payload}, restringindo-se ao estado interno do algoritmo.
+
+    \item[RNF8.] A latência de cifragem deve ser desprezível frente ao tempo de transmissão da mensagem correspondente, de modo que a camada criptográfica não se torne fator limitante do ciclo de operação do nó.
+
+    \item[RNF9.] O tempo de execução da cifragem deve ser independente do conteúdo dos dados e da chave, para entradas de mesmo comprimento.
+\end{enumerate}
+
+Diante desses requisitos, alguns deles possuem impacto prático reduzido no contexto deste projeto. Como as redes LoRaWAN operam com taxas de transmissão extremamente baixas e pacotes pequenos, atingir o limite de $2^{54}$ bytes processados sob uma mesma chave é inviável durante a vida útil física do dispositivo. Da mesma forma, considerando o uso de uma \textit{tag} de 128 bits, o limite tolerado antes da obrigatoriedade de rotação da chave é de $2^{96}$ falhas de decriptação. Alcançar esse volume de tentativas de ataques de injeção na rede é improvável, dadas as severas restrições de tempo de transmissão inerentes ao protocolo.
+
+\subsubsection{Rastreabilidade}
+A Tabela~\ref{tab:rastreabilidade_ascon} relaciona cada requisito à seção do Capítulo~\ref{cap:desenvolvimento} que o verifica e à forma de verificação. Os requisitos RNF3 e RNF4 não têm verificação experimental, porque seus limites são inalcançáveis na operação prevista, como discutido acima. A biblioteca encerra o uso da chave ao fim do contador de 32 bits, o que corresponde a menos de $2^{40}$ bytes processados com mensagens de até 220 bytes, muito antes do limite de $2^{54}$.
+
+\begin{table}[htb]
+\centering
+\caption{Rastreabilidade dos requisitos de segurança}
+\label{tab:rastreabilidade_ascon}
+\small
+\begin{tabular}{lp{3,4cm}p{8,4cm}}
+\hline
+\textbf{Requisito} & \textbf{Onde} & \textbf{Verificação} \\
+\hline
+RF1 & Seção~\ref{subsec:kat_resultados} & 1.089 vetores oficiais no computador e subconjunto na placa, sem falhas \\
+RF2, RF3, RF4 & Seção~\ref{subsec:asconsecure} & Chave gerada no nó pelo CTR\_DRBG da \textit{mbedTLS}, semeado pelo gerador de \textit{hardware}, por inspeção do código do provisionamento \\
+RF5 & Seção~\ref{subsec:asconsecure} & Renovação por descarte do estado e novo provisionamento, sem chave no ar \\
+RF6 & Seção~\ref{subsec:asconsecure} & Uma chave por nó, e o receptor guarda uma por nó registrado \\
+RF7 & Seção~\ref{subsec:asconsecure} & Contador na NVS reservado em blocos de 32 antes do uso, independente do contador de quadros \\
+RF8 & Seções~\ref{subsec:aead_resultados} e \ref{subsec:asconsecure} & 4.907 adulterações rejeitadas nas duas placas, nenhum byte de texto claro entregue \\
+RF9 & Seção~\ref{subsec:asconsecure} & Receptor descarta contador igual ou menor que o último aceito, gravado antes da entrega \\
+RNF1 & Seção~\ref{subsec:asconsecure} & Entropia bruta condicionada pelo CTR\_DRBG \\
+RNF2 & Seção~\ref{subsec:asconsecure} & Chave na NVS do nó, apagada da RAM ao ser descartada, e \textit{nonce} único pelo contador \\
+RNF3, RNF4 & esta seção & Limites inalcançáveis na operação, sem verificação experimental \\
+RNF5 & Seção~\ref{subsec:asconsecure} & \textit{Tag} de 128 bits, sem truncamento \\
+RNF6 & Seção~\ref{subsec:memoria_tempo} & \textit{Heap} livre lido continuamente durante a operação, nenhuma alocação nas duas placas \\
+RNF7 & Seção~\ref{subsec:memoria_tempo} & \textit{Buffers} fixos, estado de 80 bytes, pilha de até 436 bytes \\
+RNF8 & Seção~\ref{subsec:memoria_tempo} & 27~$\mu$s de cifragem contra cerca de 87~ms de tempo no ar \\
+RNF9 & Seção~\ref{subsec:memoria_tempo} & Piso idêntico em cinco classes de entrada, nas duas placas \\
+\hline
+\end{tabular}
+\legend{Fonte: elaborado pelos autores.}
+\end{table}

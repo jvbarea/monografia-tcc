@@ -1,0 +1,216 @@
+\section{Machine Learning}
+
+O uso de \textit{Machine Learning} é coerente com o estado da arte recente. 
+Trabalhos como \cite{farhad2023} demonstram que Machine Learning em 
+LoRaWAN vem sendo explorado para otimizar parâmetros de rede 
+(\textit{spreading factor}, potência de transmissão) e classificar padrões 
+de mobilidade.
+
+ Embora parte significativa da literatura esteja concentrada em 
+desempenho e eficiência, esse mesmo conjunto de atributos também é 
+extremamente relevante para tarefas de segurança e detecção de anomalias, 
+já que comportamentos suspeitos frequentemente se refletem justamente em 
+mudanças desses padrões operacionais \cite{farhad2023, vangelista2023}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Detecção de Anomalias como Problema de Regressão Temporal}
+
+Em redes LoRaWAN operando em condições reais, os dispositivos finais 
+transmitem mensagens de forma periódica ou orientada a evento, produzindo 
+naturalmente sequências de observações ao longo do tempo. Grandezas como a 
+intensidade do sinal recebido, a relação sinal-ruído e os contadores de 
+quadros variam de forma contínua e apresentam padrões de comportamento 
+relativamente estáveis durante a operação normal da rede. Assim, desvios 
+abruptos ou sistemáticos nesses padrões podem indicar a presença de falhas, 
+interferências ou atividades maliciosas, tornando a análise temporal dessas 
+variáveis uma abordagem promissora para a detecção de anomalias.
+
+No entanto, a aplicação de técnicas supervisionadas de classificação enfrenta 
+uma limitação estrutural importante nesse contexto. Em ambientes de operação 
+real, dados rotulados que identifiquem explicitamente quadros legítimos e 
+quadros associados a ataques são menos presentes.
+
+ O \textit{dataset} Tour Perret, 
+utilizado neste trabalho, é representativo da condição: trata-se de um 
+conjunto de dados proveniente de sensores reais instalados na Tour Perret, 
+em Grenoble, que registra o comportamento contínuo da rede sem a presença 
+de rótulos de ataque. Essa característica inviabiliza a utilização direta 
+de classificadores supervisionados e exige uma abordagem metodológica 
+distinta - o aprendizado de padrões esperados. Mas devido a sua grande volumetria e qualidade geral de dados, esta fonte será utilizada como principal, para treinos não supervisionados, assim como descrito na seção 3.2.1.1.
+
+
+A estratégia adotada neste trabalho baseia-se na modelagem do comportamento 
+esperado das variáveis de rede ao longo do tempo, por meio de modelos de 
+regressão para séries temporais. Nessa abordagem, o modelo é treinado 
+exclusivamente sobre dados que representam a operação normal da rede, 
+aprendendo os padrões temporais característicos de cada variável monitorada. Durante a fase de inferência, o modelo produz uma previsão do valor esperado 
+para cada instante de tempo, e o resíduo entre o valor previsto e o valor 
+observado é utilizado como indicador de anomalia. Observações cujo resíduo 
+supere um limiar previamente definido (Como 3 desvios padrão da média) são sinalizadas como potencialmente 
+anômalas. Esse princípio, conhecido na literatura como detecção de anomalias 
+baseada em previsão, tem sido aplicado com sucesso em contextos de IoT e 
+redes de sensores justamente por não depender da disponibilidade de dados 
+rotulados de ataque \cite{chalapathy2019}.
+
+
+\subsubsection{Contexto Prático dos Datasets Disponíveis}
+
+A escolha da abordagem não supervisionada é também sustentada por 
+limitações práticas do contexto. Para este trabalho, dois datasets 
+públicos foram selecionados estrategicamente:
+
+\begin{description}
+    \item[Tour Perret (Treinamento/Validação):] Dados reais de operação 
+    normal, sem injeção ou simulação de ataques. Adequado para aprender 
+    padrões verdadeiros de comportamento esperado.
+    
+    \item[GUARD (Validação contra Ataques Conhecidos):] Dados com ataques 
+    rotulados (replay, spoofing). Permite verificar se o modelo detecta 
+    desvios associados a ataques já identificados.
+\end{description}
+
+Esta estratégia de dois datasets permite validação em duas fases: 
+primeiro, verificar se o modelo aprendeu comportamento normal 
+corretamente (Seção 3.2.3.3); segundo, verificar se detecta anomalias 
+quando confrontado com ataques conhecidos (Seção 3.2.3.4). A descrição 
+detalhada destes datasets é apresentada na Seção 3.2.1.
+
+
+Essa escolha também apresenta uma vantagem interpretativa relevante para o 
+contexto do trabalho. Ao modelar o comportamento normal da rede, torna-se 
+possível não apenas detectar anomalias, mas também caracterizá-las em termos 
+da magnitude e da persistência do desvio observado, oferecendo informações 
+mais ricas do que uma simples classificação binária. Além disso, a abordagem 
+por regressão é mais adaptável a variações graduais do comportamento da rede 
+ao longo do tempo, como mudanças sazonais ou degradação natural do sinal, 
+uma vez que o modelo pode ser periodicamente reatualizado com dados recentes 
+de operação normal.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Modelos de Regressão para Séries Temporais}
+
+A escolha dos modelos de regressão utilizados neste trabalho foi orientada 
+pela necessidade de cobrir paradigmas metodológicos distintos, permitindo 
+uma comparação fundamentada entre abordagens estatísticas clássicas e 
+métodos baseados em aprendizado profundo. 
+
+Nesse sentido, foram selecionados a princípio, 
+três modelos: o ARIMA, a Rede Neural Recorrente simples (RNN) e a Rede de 
+Memória Longa de Curto Prazo (LSTM). 
+
+Os critérios para seleção foram:
+(1) \textbf{Progressão de complexidade}: ARIMA (modelo clássico, estatístico) 
+→ RNN (neural simples) → LSTM (neural com gates). Isto permite identificar 
+em qual ponto a complexidade traz ganho real.
+(2) \textbf{Representatividade de paradigmas}: cobrindo abordagem 
+estatística, neural simples e neural avançada.
+(3) \textbf{Adequação ao problema}: todos três são apropriados para séries 
+temporais em IoT.
+Estes pontos serão descritos com referências e de maneira mais profunda abaixo.
+
+Outras alternativas foram consideradas (XGBoost, Prophet) mas não incluídas 
+porque: XGBoost não é recorrente (inadequado para séries longas); Prophet é 
+baseado em tendência, não em detecção de anomalia.
+
+Essa progressão é metodologicamente 
+importante porque permite identificar em que ponto a complexidade adicional 
+do modelo se traduz em ganho efetivo de desempenho para o problema específico 
+de detecção de anomalias em redes LoRaWAN.
+
+O ARIMA (\textit{Autoregressive Integrated Moving Average}) é um modelo 
+estatístico clássico amplamente utilizado para modelagem e previsão de séries 
+temporais estacionárias \cite{box2015}. Sua formulação combina três 
+componentes: um componente autorregressivo, que modela a dependência linear 
+entre o valor atual e valores passados da série; um componente de integração, 
+que torna a série estacionária por meio de diferenciação; e um componente de 
+média móvel, que modela a dependência em relação aos erros de previsão 
+anteriores. A principal vantagem do ARIMA neste contexto é sua 
+interpretabilidade: os parâmetros do modelo têm significado estatístico 
+direto e o comportamento do modelo pode ser analisado formalmente. Por esse 
+motivo, o ARIMA é utilizado neste trabalho como \textit{baseline} estatístico, 
+estabelecendo um patamar de referência para a avaliação dos modelos neurais 
+subsequentes. Sua limitação principal reside na suposição de linearidade das 
+dependências temporais, o que pode ser insuficiente para capturar padrões 
+mais complexos presentes em séries de redes de sensores.
+
+As Redes Neurais Recorrentes (RNNs) representam uma extensão natural das 
+redes neurais artificiais para o domínio de sequências temporais 
+\cite{rumelhart1986}. Diferentemente das redes neurais tradicionais, as RNNs 
+mantêm um estado interno que é atualizado a cada instante de tempo, 
+permitindo que informações de observações anteriores influenciem a previsão 
+atual. Essa característica as torna adequadas para modelar dependências 
+temporais sem a necessidade de especificação manual da ordem de defasagem, 
+como ocorre no ARIMA. Neste trabalho, a RNN simples é utilizada como 
+\textit{baseline} neural, representando o paradigma recorrente em sua forma 
+mais elementar e servindo de referência para a avaliação da LSTM.
+
+A Rede de Memória Longa de Curto Prazo (LSTM, do inglês 
+\textit{Long Short-Term Memory}) é uma arquitetura recorrente desenvolvida 
+especificamente para superar uma limitação fundamental das RNNs simples: o 
+problema do desvanecimento do gradiente durante o treinamento 
+\cite{hochreiter1997}. Em sequências longas, as RNNs tendem a perder a 
+capacidade de propagar informações relevantes de instantes distantes no 
+tempo, o que limita sua eficácia na modelagem de dependências temporais de 
+longo alcance. A LSTM contorna esse problema por meio de uma estrutura de 
+células de memória controladas por portões de entrada, esquecimento e saída, 
+que regulam seletivamente quais informações devem ser retidas, atualizadas 
+ou descartadas ao longo da sequência. Essa capacidade é especialmente 
+relevante no contexto de redes LoRaWAN, onde padrões anômalos podem se 
+manifestar como desvios sutis acumulados ao longo de múltiplos quadros 
+consecutivos, e não necessariamente como eventos isolados e abruptos. Por 
+esse conjunto de razões, a LSTM é tratada neste trabalho como o modelo 
+principal da abordagem proposta, sendo avaliada em comparação com os dois 
+\textit{baselines} anteriores.
+
+A avaliação comparativa dos três modelos será conduzida com base em métricas 
+de erro de regressão, notadamente o Erro Absoluto Médio (MAE) e a Raiz do 
+Erro Quadrático Médio (RMSE), aplicadas sobre o conjunto de teste. Para a 
+etapa de detecção de anomalias, o resíduo de cada modelo será submetido a 
+um critério de limiarização, e o desempenho da detecção será avaliado por 
+meio de métricas como precisão, revocação e taxa de falsos positivos. Essa 
+distinção entre a avaliação da qualidade de previsão e a avaliação da 
+capacidade de detecção é metodologicamente necessária, pois um modelo pode 
+apresentar bom desempenho de regressão sem necessariamente produzir resíduos 
+bem calibrados para a identificação de anomalias.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Considerações sobre Inferência em Dispositivos de Borda}
+
+O treinamento e a avaliação dos modelos descritos neste trabalho são 
+realizados em ambiente computacional convencional, com recursos de memória e 
+processamento sem restrições relevantes. Essa decisão é adequada à fase 
+atual do projeto, cujo objetivo central é investigar a eficácia das 
+abordagens de detecção de anomalias antes de considerar questões de 
+implantação.
+
+No entanto, uma perspectiva relevante para a continuidade do trabalho envolve 
+a possibilidade de execução do modelo treinado diretamente no gateway, 
+eliminando a necessidade de transmissão dos dados brutos para uma camada 
+externa de processamento. Esse paradigma, frequentemente referenciado na 
+literatura como \textit{TinyML} ou inferência em borda, consiste na adaptação 
+de modelos de aprendizado de máquina para execução em microcontroladores com 
+severas restrições de memória RAM, armazenamento em \textit{flash} e consumo 
+energético \cite{ray2022}.
+
+A viabilidade dessa portabilidade depende fundamentalmente da complexidade do 
+modelo resultante após o treinamento. Modelos com menor número de parâmetros 
+e estruturas mais simples, como RNNs com poucas unidades recorrentes ou 
+versões reduzidas da LSTM, são candidatos mais adequados à conversão para 
+formatos otimizados de inferência, como o TensorFlow Lite for 
+Microcontrollers. Técnicas adicionais de compressão, como quantização de 
+pesos e poda de conexões, podem reduzir ainda mais o custo computacional sem 
+perda significativa de desempenho \cite{jacob2018}.
+
+Neste trabalho, a análise da complexidade dos modelos treinados será 
+conduzida como critério complementar de avaliação, com o objetivo de fornecer 
+subsídios para essa investigação futura. Contudo, a portabilidade efetiva 
+para o gateway não constitui um requisito do projeto atual, sendo tratada 
+como uma perspectiva de continuidade a ser explorada em trabalhos 
+subsequentes, conforme discutido na Seção 7.3.
+
+
+
+entrar no mestrado de engenharia mecânica
