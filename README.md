@@ -46,6 +46,8 @@ bibliografia.
 
 ## Como compilar
 
+Instalação passo a passo (Git, MiKTeX, Perl, VS Code, fluxo): **[SETUP.md](SETUP.md)**.
+
 **Sem instalar nada.** Cada push dispara a Action "Compilar PDF". O PDF fica
 em *Actions > execução > Artifacts*. Se a compilação falhar, o `main.log`
 está no mesmo artefato.

@@ -26,8 +26,10 @@
 # PDF compilado: vem da Action (artefato) ou da compilação local; não versionar
 main.pdf
 
-# Editores e sistema
-.vscode/
+# Editores e sistema (extensions.json e settings.json do VS Code são versionados)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 Thumbs.db
 .DS_Store
