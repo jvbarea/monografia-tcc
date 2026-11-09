@@ -1,0 +1,37 @@
+{
+  // Compila com latexmk, que lê o .latexmkrc da raiz (pdflatex + bibtex).
+  "latex-workshop.latex.recipe.default": "latexmk",
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.rootFile.useSubFile": false,
+  "latex-workshop.latex.autoClean.run": "never",
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.message.badbox.show": "none",
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "latexmk",
+      "tools": ["latexmk"]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk",
+      "command": "latexmk",
+      "args": [
+        "-pdf",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "-synctex=1",
+        "%DOC%"
+      ]
+    }
+  ],
+  "files.eol": "\n",
+  "files.encoding": "utf8",
+  "[latex]": {
+    "editor.wordWrap": "on",
+    "editor.rulers": [80]
+  },
+  "[bibtex]": {
+    "editor.wordWrap": "on"
+  }
+}

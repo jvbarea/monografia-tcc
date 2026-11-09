@@ -4,12 +4,19 @@ Fonte da monografia de três autores. Cada um é dono de uma frente e do texto
 dela; o Claude de cada um edita só a parte do seu usuário, salvo pedido
 explícito.
 
-| Autor | Frente | Pasta (após a divisão) | Seções hoje |
+| Autor | Frente | Pasta | Seções |
 |---|---|---|---|
 | João Barea (`barea`) | infraestrutura LoRa: nó, gateway, backend, coletas | `barea/` | Cap. 2 §2.1; Cap. 3 §3.1; Cap. 4 §4.1; Cap. 5 §5.1.1, §5.1.4, §5.2 |
-| Felipe Korbes (`felipe`) | criptografia leve, Ascon, biblioteca AsconSecure | `felipe/` | Cap. 2 §2.2; Cap. 3 §3.2.5 e §3.3; Cap. 4 §4.3; Cap. 5 §5.1.2, §5.3 |
-| Celso Tadaki (`tadaki`) | detecção de anomalias por aprendizado de máquina | `tadaki/` | Cap. 2 §2.3; Cap. 3 §3.2.1 a §3.2.4; Cap. 4 §4.2; Cap. 5 §5.1.3 |
-| Grupo | | `main.tex`, Cap. 1, Cap. 6, títulos de capítulo | |
+| Felipe Korbes (`felipe`) | criptografia leve, Ascon, biblioteca AsconSecure | `felipe/` | Cap. 2 §2.2; Cap. 3 §3.2.5 e §3.3; Cap. 4 §4.3; Cap. 5 §5.1.2, §5.3; Cap. 6 parágrafos de segurança |
+| Celso Tadaki (`tadaki`) | detecção de anomalias por aprendizado de máquina | `tadaki/` | Cap. 2 §2.3; Cap. 3 §3.2.1 a §3.2.4; Cap. 4 §4.2; Cap. 5 §5.1.3; Cap. 6 §6.1 perspectivas |
+| Grupo | | `main.tex`, `capitulos/` | Cap. 1 inteiro; esqueletos dos capítulos (título, parágrafos de abertura, `\input`); Cap. 6 parágrafos 1 e 2; `refs-comuns.bib` |
+
+Cada capítulo em `capitulos/` é um esqueleto que faz `\input` dos fragmentos
+de cada autor, na ordem das seções. Figuras em `<autor>/figuras/`.
+Bibliografia: `<autor>/refs.bib` para o que só aquela frente cita;
+`capitulos/refs-comuns.bib` para o que mais de uma frente ou o grupo cita.
+Chave citada por duas frentes vai para a comum (bibtex avisa "repeated
+entry" se ficar em dois arquivos).
 
 **Descubra quem é o usuário** antes de editar: `git config user.name`, ou
 pergunte. Regras próprias de cada autor ficam no `CLAUDE.md` da sua pasta.

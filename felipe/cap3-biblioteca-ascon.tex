@@ -1,0 +1,14 @@
+\subsection{Biblioteca Ascon}
+\label{subsec:biblioteca-ascon}
+Para a implementação das primitivas criptográficas no microcontrolador, optou-se pela utilização da biblioteca de código aberto \textit{ascon-suite}, mantida por \citeonline{weatherley2023ascon}. A escolha desta implementação específica, em detrimento do repositório de referência matemático original (\textit{ascon-c}), justifica-se por fatores arquiteturais estritamente alinhados aos objetivos de prototipagem em sistemas embarcados.
+
+Primeiramente, a \textit{ascon-suite} foi estruturada com foco em plataformas com restrição de recursos, fornecendo rotinas de \textit{backend} altamente otimizadas em linguagem \textit{Assembly}, podendo ser usada diretamente na IDE do Arduino como uma biblioteca, facilitando o desenvolvimento na placa ESP32.
+
+Em segundo lugar, a biblioteca expõe, além da interface de uma única chamada, uma API incremental que permite cifrar mensagens em fragmentos sucessivos, mantendo apenas o estado interno de 80 bytes entre as chamadas. Esse recurso não é exigido pelos \textit{payloads} deste trabalho, que cabem integralmente em memória, mas amplia a margem de crescimento da solução para mensagens maiores que a RAM disponível.
+
+Por fim, o rigor técnico da biblioteca possui forte validação científica. Os códigos otimizados em \textit{Assembly} e C que deram origem à \textit{ascon-suite} foram empregados como base metodológica para a extração de métricas de desempenho em microcontroladores durante o processo de padronização do NIST, com resultados documentados na seção 4.1.3 do relatório oficial NIST IR 8454 \cite{nistir8454}. Uma das três plataformas de teste ali utilizadas é o ESP32 (Xtensa LX6, 240~MHz), o mesmo microcontrolador e a mesma frequência adotados neste trabalho.
+
+A implementação utilizada neste trabalho, fornecida pela biblioteca ascon-suite, corresponde à versão finalista submetida à competição de Criptografia Leve do NIST (Ascon v1.2), e não à forma normatizada posteriormente na publicação SP 800-232 (2025). Especificamente, adota-se a variante Ascon-128a, que compartilha a mesma estrutura de permutação do Ascon-AEAD128 padronizado. As diferenças entre a v1.2 e o SP 800-232 concentram-se no vetor de inicialização, na ordenação de bytes na interface de entrada/saída e na separação de domínio. Como o custo computacional do Ascon é dominado pelas aplicações da permutação, idênticas nas duas versões, espera-se que as métricas de desempenho, memória e energia sejam essencialmente equivalentes.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

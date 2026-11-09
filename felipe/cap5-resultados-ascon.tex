@@ -1,183 +1,3 @@
-\chapter{Desenvolvimento do Trabalho} \label{cap:desenvolvimento}
-\section{Atividades Previstas}
-
-\subsection{Implementação da infraestrutura}
-
-A infraestrutura foi implementada em três componentes: o firmware do nó sensor, o firmware do \textit{gateway} e o \textit{backend} de persistência, além de ferramentas de análise. Os dois firmwares rodam em placas Heltec WiFi LoRa 32 V3 \cite{heltec_wifi_lora_32_v3}, que integram o microcontrolador ESP32-S3 e o transceptor LoRa SX1262 \cite{semtech_sx1262}. O código está em repositório público, com os registros de decisão que documentam cada escolha e as alternativas descartadas.
-
-Os parâmetros de rádio, o formato do quadro e a chave de rede ficam em um único cabeçalho compartilhado pelos dois firmwares. A escolha é deliberada: uma divergência de frequência, fator de espalhamento ou disposição de bytes entre nó e \textit{gateway} não produz erro de compilação nem mensagem em tempo de execução, apenas um receptor que não recebe nada. Verificações em tempo de compilação garantem que o quadro tem exatamente 26 bytes e não excede o limite de 51 bytes do plano regional.
-
-O nó transmite um quadro a cada cinco segundos, com agendamento em tempo absoluto: o instante da próxima transmissão é calculado a partir do anterior, e não a partir do fim da transmissão corrente, de modo que o tempo de processamento não se acumula como atraso. O contador de quadros é persistido na memória não volátil em blocos de 32: o nó grava o teto do bloco antes de usá-lo e, ao reiniciar, retoma do próximo bloco. Alguns valores são pulados a cada reinício, mas nenhum se repete, o que preserva a unicidade do \textit{nonce} derivado do contador. Os dados de aplicação (temperatura e iluminância) são, nesta etapa, sintéticos: senoides com período conhecido, o que permite verificar a decifragem no receptor por inspeção. Os metadados de recepção, que são as variáveis dos modelos, não dependem deles.
-
-O \textit{gateway} divide o trabalho entre os dois núcleos do processador. No primeiro, uma interrupção do transceptor sinaliza cada quadro recebido; o firmware lê o pacote, registra RSSI e SNR, recoloca o rádio em escuta e só então valida o quadro, na ordem do LoRaWAN: verifica a janela anti-replay pelo contador em claro, autentica e decifra, e apenas depois de a autenticação conferir avança a janela. O registro JSON com os doze campos sai pela interface serial antes de qualquer envio pela rede, sob exclusão mútua para que nenhum diagnóstico o corte ao meio. O quadro é então depositado, sem espera, em uma fila para o segundo núcleo. Nesse núcleo, uma tarefa mantém a conexão Wi-Fi e a sincronização de relógio por NTP, agrupa os quadros em lotes de até vinte, envia ao \textit{backend} e, em caso de falha, guarda até 512 registros e tenta novamente com espera crescente de 1 a 30 segundos. Cada quadro entregue mais de quinze segundos após a recepção é marcado como reenviado, e o instante UTC de recepção é reconstruído a partir do relógio monotônico do dispositivo, de modo que quadros recebidos antes da sincronização de relógio saem com hora correta. A cada trinta segundos o \textit{gateway} emite um sinal de vida com os contadores de quadros recebidos, rejeitados por replay, por autenticação e por CRC, e com o estado da fila e da conexão.
-
-O \textit{backend} é uma API em FastAPI com banco SQLite. A rota de ingestão valida cada quadro contra um esquema que rejeita campos desconhecidos, para que um nome de campo errado produza um erro imediato em vez de uma coluna perdida, e insere com um índice único sobre \textit{gateway}, sessão, dispositivo e contador, o que torna o reenvio idempotente. Rotas de consulta devolvem quadros, resumo por sessão e agregados de uma sessão, e uma página de monitoramento servida pela própria API exibe, em tempo quase real, as séries de RSSI, SNR e intervalo, com marcas nos reinícios do nó. A separação entre salto por reinício e perda de rádio, descrita na Seção~\ref{sec:resultados_infra}, é feita por um módulo único, usado tanto pela API quanto pela ferramenta de análise do registro serial, para que as duas fontes nunca discordem. O \textit{backend} tem dezoito testes automatizados.
-
-Quatro suítes de teste acompanham o firmware, executadas na própria placa: verificação de inicialização (pinos, transceptor, potência de bancada), codificação e decodificação do quadro com rejeição de quadros forjados, formatação byte a byte do registro JSON e persistência do contador. A primeira foi executada nas duas placas; as outras três compilam e sua execução no hardware está pendente.
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-\subsection{Segurança com Ascon}
-A camada de segurança foi desenvolvida em cinco atividades, cujos resultados estão na Seção~\ref{sec:resultados_ascon}. A biblioteca \textit{ascon-suite} foi integrada ao ambiente do ESP32 e, sobre ela, foi escrita a biblioteca \textit{AsconSecure}, que cifra e autentica o \textit{payload} de cada mensagem antes de entregá-lo ao rádio. A implementação foi validada pelos \textit{Known Answer Tests} oficiais, de forma exaustiva no computador e com um subconjunto na própria placa. A chave de cada nó passou a ser gerada no próprio dispositivo durante o provisionamento, pelo gerador de hardware do ESP32 com o CTR\_DRBG da \textit{mbedTLS}, seguindo as recomendações do NIST. Uma bateria de adulteração com 4.907 casos, sobre o texto cifrado, os dados associados, a \textit{tag} e o \textit{nonce}, confirmou que toda mensagem alterada é rejeitada. Por fim, mediram-se o tempo de execução em ciclos de \textit{clock}, a memória de \textit{heap}, pilha e \textit{Flash}, o tempo constante e o comparativo com o AES-128-GCM nas duas placas, e o consumo de energia com resistor \textit{shunt} e osciloscópio no ESP32 clássico.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Modelo de Machine Learning}
-
-O desenvolvimento da frente de aprendizado de máquina seguirá um conjunto de
-atividades voltadas à preparação dos dados, treinamento dos modelos e avaliação
-da capacidade de detecção de anomalias. O objetivo dessa etapa é construir uma
-base experimental consistente para comparar diferentes abordagens de regressão
-temporal aplicadas ao comportamento da rede LoRaWAN.
-
-As atividades previstas para essa frente de trabalho são:
-\begin{itemize}
-    \item \textbf{Preparação dos datasets:} Organizar os dados selecionados para a etapa de modelagem, com foco principal no dataset Tour Perret e uso complementar do dataset GUARD. Essa preparação incluirá harmonização de timestamps, tratamento de valores ausentes, extração dos atributos relevantes e organização das observações por dispositivo.
-
-    \item \textbf{Definição e seleção de variáveis:} Avaliar os atributos disponíveis nos datasets e selecionar o subconjunto de variáveis mais adequado para a modelagem temporal do comportamento normal da rede. Entre os candidatos principais estão RSSI, SNR, FCnt, \textit{inter-arrival time} e \textit{data rate}, considerando sua estabilidade temporal, disponibilidade e relevância para a identificação de desvios.
-
-    \item \textbf{Divisão temporal dos dados:} Separar os dados em conjuntos de treinamento (60\%), validação (20\%) e teste (20\%) por meio de uma divisão cronológica, preservando a ordem temporal das observações e evitando vazamento de informação futura para o treinamento dos modelos.
-
-    \item \textbf{Exploração e seleção de arquiteturas:} Implementar os modelos ARIMA, RNN e LSTM definidos na etapa metodológica do trabalho. Para cada modelo, será realizada uma exploração de hiperparâmetros e configurações arquiteturais com o objetivo de identificar combinações adequadas ao problema. A seleção de configurações será orientada por critérios de desempenho preditivo e simplicidade estrutural, priorizando modelos com menor complexidade quando o ganho de performance for marginal.
-
-    \item \textbf{Treinamento exclusivo em dados normais:} Todos os modelos serão treinados e validados exclusivamente com dados representativos da operação normal da rede (dataset Tour Perret), garantindo que o comportamento esperado seja aprendido sem contaminação por anomalias ou ataques.
-
-    \item \textbf{Avaliação da qualidade preditiva:} Comparar os modelos com base em métricas de erro de regressão (MAE e RMSE) no conjunto de teste, com o objetivo de verificar qual abordagem representa com maior fidelidade o comportamento esperado das variáveis monitoradas.
-
-    \item \textbf{Calibração de limiar de detecção:} Com base nos resíduos do conjunto de validação, será definido um critério de limiarização (baseado em desvio padrão ou percentis) para classificar observações como normais ou potencialmente anômalas.
-
-    \item \textbf{Avaliação da capacidade de detecção:} Analisar a performance de detecção dos modelos no conjunto de teste e também na aplicação aos dados do dataset GUARD, com o objetivo de verificar se os modelos conseguem identificar anomalias quando confrontados com padrões diferentes ou com ataques conhecidos. Será utilizada a métrica de teste de generalização para avaliar robustez.
-
-    \item \textbf{Análise de viabilidade para execução em borda:} Após a comparação entre os modelos, será realizada uma análise complementar da complexidade das soluções obtidas, considerando número de parâmetros, custo computacional e compatibilidade com uma eventual etapa futura de adaptação para TinyML.
-\end{itemize}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Integração progressiva da solução}
-
-A integração seguiu os marcos definidos no Capítulo~\ref{cap:metodo}, e a Tabela~\ref{tab:marcos_cronologia} registra quando cada um foi atingido. Os três primeiros marcos, que estabelecem a cadeia de ferramentas, a inicialização do transceptor e o enlace ponta a ponta, foram concluídos com a coleta de referência de 23 de agosto de 2026, com o quadro ainda em claro. O quinto e o sétimo, que acrescentam o envio ao \textit{backend} e o quadro autenticado, foram desenvolvidos em paralelo e validados juntos na coleta de 24 de setembro de 2026, descrita na Seção~\ref{sec:resultados_infra}. Sobre essa base, a frente de criptografia substitui o algoritmo da camada de cifra por uma opção de compilação, sem alterar o restante do firmware, e a frente de aprendizado de máquina consome a base persistida.
-
-\begin{table}[htb]
-\centering
-\caption{Cronologia dos marcos da infraestrutura}
-\label{tab:marcos_cronologia}
-\begin{tabular}{clll}
-\hline
-\textbf{Marco} & \textbf{Objetivo} & \textbf{Data} & \textbf{Estado} \\
-\hline
-1 & Cadeia de ferramentas & jul. 2026 & concluído \\
-2 & Rádio & jul. 2026 & concluído \\
-3 & Enlace ponta a ponta & 23 ago. 2026 & concluído \\
-4 & Sensores reais & & pendente \\
-5 & Wi-Fi, HTTP e API & 24 set. 2026 & concluído \\
-6 & Energia & & firmware pronto \\
-7 & Segurança do enlace & 24 set. 2026 & Ascon pendente \\
-\hline
-\end{tabular}
-\legend{Fonte: elaborado pelos autores (2026).}
-\end{table}
-
-Três dificuldades de integração merecem registro, porque afetam a coleta de dados. A primeira: abrir a porta serial do nó reinicia a placa, pois o conversor USB-serial pulsa as linhas de controle ao abrir a conexão; um reinício no meio da coleta zera a sessão. Desde então o nó opera em bateria e sem monitoramento durante as coletas, e o \textit{gateway} é o único ponto de observação. A segunda: o hotspot de celular usado como rede no laboratório é classificado pelo sistema operacional do servidor como rede pública, o que exige uma regra de firewall explícita para a porta da API. A terceira: o relógio do servidor estava cerca de meio segundo atrás do relógio do \textit{gateway}, sincronizado por NTP, o que impede usar a diferença entre o instante de recepção e o de ingestão como medida de latência sem sincronizar o servidor.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section{Resultados da infraestrutura de comunicação}
-\label{sec:resultados_infra}
-
-\subsection{Configuração da bancada e métricas}
-
-As duas placas permaneceram estáticas, a poucos metros uma da outra, em ambiente interno. A Tabela~\ref{tab:parametros_enlace} apresenta os parâmetros do enlace e a razão de cada escolha. O nó foi alimentado por bateria portátil e não foi conectado a computador durante as coletas; o \textit{gateway} registrou cada quadro na serial e, na segunda coleta, também no \textit{backend}. Ao fim de cada coleta, o registro serial e o banco de dados foram conferidos quadro a quadro.
-
-\begin{table}[htb]
-\centering
-\caption{Parâmetros do enlace e justificativas}
-\label{tab:parametros_enlace}
-\small
-\begin{tabular}{p{3cm}p{2cm}p{9,4cm}}
-\hline
-\textbf{Parâmetro} & \textbf{Valor} & \textbf{Justificativa} \\
-\hline
-Frequência & 916,8 MHz & Canal 8 do plano AU915 \cite{lorawan_rp002}, na faixa de 915 a 928 MHz autorizada para radiação restrita \cite{anatel_radiacao_restrita}. \\
-SF, BW, CR & 7, 125 kHz, 4/5 & Menor tempo no ar (61,7 ms para 26 bytes). Corresponde ao DR5 do plano AU915. \\
-Palavra de sincronismo & 0x12 & Rede privada; o LoRaWAN usa 0x34. Evita recepção cruzada com redes LoRaWAN próximas. \\
-Potência & 5 dBm & A poucos metros, potências maiores saturam o receptor e o RSSI deixa de refletir o enlace. Como o RSSI é variável dos modelos, medi-lo saturado contaminaria os dados. A placa admite 22 dBm, reservados ao teste de alcance. \\
-Período & 5 s & Agendamento em tempo absoluto, sem acúmulo de atraso. \\
-\hline
-\end{tabular}
-\legend{Fonte: elaborado pelos autores (2026).}
-\end{table}
-
-A qualidade do enlace é descrita por quatro métricas, todas derivadas do registro do \textit{gateway}. A \textbf{perda de rádio} é o número de contadores ausentes na faixa observada em uma sessão, excluídos os saltos por reinício do nó: como o contador é persistido em blocos de 32, um reinício o faz avançar para o próximo múltiplo, e os valores pulados nunca foram transmitidos. Um buraco é classificado como reinício quando o novo contador é múltiplo de 32 e o intervalo entre os dois quadros recebidos é menor do que 75\% do intervalo que a perda dos quadros ausentes teria produzido. A \textbf{cadência} é a média e o desvio padrão do intervalo entre quadros de contadores consecutivos; intervalos que atravessam um buraco não entram, e o primeiro quadro de cada sessão tem intervalo nulo, não zero. \textbf{RSSI} e \textbf{SNR} são descritos por média e faixa.
-
-\subsection{Coletas realizadas}
-
-Foram realizadas duas coletas de pelo menos uma hora, resumidas na Tabela~\ref{tab:coletas}. A primeira, em 23 de agosto, validou o enlace com o quadro em claro de 10 bytes e sem \textit{backend}. A segunda, em 24 de setembro, usou o quadro autenticado de 26 bytes, com AES-128-GCM como algoritmo de linha de base, e o \textit{backend} no ar.
-
-\begin{table}[htb]
-\centering
-\caption{Resultados das coletas em bancada}
-\label{tab:coletas}
-\begin{tabular}{lrr}
-\hline
- & \textbf{Referência, 23/08} & \textbf{Integração, 24/09} \\
-\hline
-Quadro & 10 bytes, em claro & 26 bytes, autenticado \\
-Duração & 82,3 min & 71,5 min \\
-Quadros recebidos & 989 & 857 \\
-Contadores esperados na faixa & 989 & 890 \\
-Pulados por reinício do nó & 0 & 33 \\
-Perdidos no ar & 0 & 0 \\
-Cadência: média & 5000,00 ms & 4999,98 ms \\
-Cadência: desvio padrão & 1,00 ms & 1,56 ms \\
-Cadência: faixa & 4999 a 5001 ms & 4996 a 5004 ms \\
-RSSI: média & $-24{,}7$ dBm & $-33{,}4$ dBm \\
-RSSI: mínimo & $-39$ dBm & $-47$ dBm \\
-SNR: faixa & 2,25 dB & 2,50 dB \\
-Entregues ao \textit{backend} & não se aplica & 857 de 857, em tempo real \\
-\hline
-\end{tabular}
-\legend{Fonte: elaborado pelos autores (2026).}
-\end{table}
-
-\begin{figure}[htb]
-  \caption{\label{fig:cadencia_coletas}Intervalo entre quadros consecutivos nas duas coletas}
-  \begin{center}
-      \includegraphics[width=\textwidth]{figuras/cadencia_coletas.png}
-  \end{center}
-  \legend{Fonte: elaborado pelos autores (2026). A faixa sombreada indica $\pm 5$ ms em torno do período. A linha tracejada marca o reinício do nó.}
-\end{figure}
-
-A Figura~\ref{fig:cadencia_coletas} mostra o intervalo entre quadros consecutivos ao longo das duas coletas. Em nenhuma delas houve perda de rádio, e a cadência ficou dentro de $\pm 5$~ms do período em todos os quadros. O desvio padrão maior na segunda coleta (1,56 contra 1,00 ms) é compatível com o processamento adicional nas duas pontas, a cifragem no nó e a atividade de Wi-Fi no 	extit{gateway}, mas atribuí-lo a uma delas exigiria medição dedicada, com carimbo de tempo de microssegundo.
-
-\begin{figure}[htb]
-  \caption{\label{fig:rssi_integracao}RSSI por quadro na coleta de 24 de setembro}
-  \begin{center}
-      \includegraphics[width=\textwidth]{figuras/rssi_integracao.png}
-  \end{center}
-  \legend{Fonte: elaborado pelos autores (2026). A área sombreada indica o período em que a placa do nó foi manipulada.}
-\end{figure}
-
-\subsection{Discussão}
-
-\textbf{Reinício do nó e perda de rádio.} Na coleta de 24 de setembro, o contador saltou de 126 para 160 com intervalo de 14,7~s entre os dois quadros. Uma contagem simples registraria 33 quadros perdidos, ou 3,7\% de perda. A perda real de 33 quadros teria produzido um intervalo de cerca de 170~s; o intervalo observado e o fato de 160 ser múltiplo de 32 identificam um reinício do nó. A regra que separa os dois casos foi incorporada à API e à ferramenta de análise depois desse achado, e é o motivo de a Tabela~\ref{tab:coletas} distinguir "pulados" de "perdidos". Para a frente de aprendizado de máquina, a distinção importa: um reinício é um evento do dispositivo, uma perda é um evento do enlace, e um detector treinado sem essa separação aprenderia a confundir os dois.
-
-\textbf{Mudança de regime no RSSI.} A Figura~\ref{fig:rssi_integracao} mostra o RSSI em torno de $-37$~dBm nos primeiros vinte minutos e entre $-30$ e $-33$~dBm a partir do trigésimo quarto, com uma transição no intervalo em que a placa do nó foi manipulada. Não é um fenômeno de rede: é a posição da antena. O episódio ilustra o que os modelos precisam distinguir: uma mudança de regime causada por intervenção física produz uma série que um detector de anomalias marcaria, e só o contexto operacional permite rotulá-la corretamente.
-
-\textbf{SNR saturado.} Nas duas coletas o SNR variou menos de 3~dB enquanto o RSSI variou mais de 15~dB, sem correlação entre os dois. Com as placas a poucos metros, o estimador de SNR do transceptor opera saturado, como discutido na Subseção~\ref{subsec:camada_fisica_lora}. Em bancada, o SNR é uma coluna quase constante e não tem valor como variável de entrada; ele só passa a variar de forma útil em testes de alcance.
-
-\textbf{Tempo no ar.} O tempo no ar calculado pela fórmula do fabricante para o quadro de 26 bytes em SF7 é de 61,7~ms, e para o quadro de 10 bytes, 41,2~ms. O tempo medido da função de transmissão, do início da chamada ao fim da transmissão, foi de 69 e 48~ms, respectivamente. A diferença de cerca de 7~ms é constante e corresponde ao processamento fora do rádio: montagem do quadro, cifragem e carga do transceptor. A camada de segurança acrescentou 50\% ao tempo no ar (de 41,2 para 61,7~ms), quase todo devido à tag de autenticação de 16 bytes; derivar o \textit{nonce} em vez de transmiti-lo evitou outros 16 bytes, que elevariam o tempo no ar a 87,3~ms.
-
-\textbf{Limitações.} Uma coleta com perda zero valida a infraestrutura, mas é o caso em que nada está errado: quase toda a variabilidade que um detector precisa aprender está ausente, e as coletas apresentadas servem como referência de comportamento normal, não como conjunto de treinamento. Os dados de aplicação são sintéticos. A janela anti-replay do \textit{gateway} vive em memória volátil: um reinício do \textit{gateway} a zera, e há uma janela de repetição possível até a chegada do primeiro quadro válido, limitação que o LoRaWAN resolve persistindo o contador no \textit{network server}. Todos os nós compartilhariam uma mesma chave, ao contrário do LoRaWAN, em que cada dispositivo tem a sua. A medição de energia do nó e o teste de alcance com fatores de espalhamento maiores não foram executados.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \section{Resultados dos Testes da Camada de Segurança (Ascon)}
 \label{sec:resultados_ascon}
 
@@ -310,7 +130,7 @@ Por fim, avaliou-se a resistência a ataques de canal colateral baseados em temp
 \begin{figure}[htb]
   \caption{\label{fig:bench_tempo_constante}Tempo constante. Diferença entre a média e o piso de 2.000 cifragens, por classe de entrada, em 16 e 64 bytes, nas duas placas}
   \begin{center}
-      \includegraphics[width=\textwidth]{figuras/bench_tempo_constante.png}
+      \includegraphics[width=\textwidth]{felipe/figuras/bench_tempo_constante.png}
   \end{center}
   \legend{Fonte: elaborado pelos autores.}
 \end{figure}
@@ -366,7 +186,7 @@ Cada algoritmo foi medido pelo piso de 2.000 medidas, alternando-se os dois na m
 \begin{figure}[htb]
   \caption{\label{fig:bench_ciclos_tamanho}Piso de ciclos da cifragem (acima) e da decifragem (abaixo) por tamanho de \textit{payload}, Ascon-128a e AES-128-GCM, nas duas placas}
   \begin{center}
-      \includegraphics[width=\textwidth]{figuras/bench_ciclos_tamanho.png}
+      \includegraphics[width=\textwidth]{felipe/figuras/bench_ciclos_tamanho.png}
   \end{center}
   \legend{Fonte: elaborado pelos autores.}
 \end{figure}
@@ -376,7 +196,7 @@ O Ascon-128a foi mais rápido que o AES-128-GCM em todas as 1.200 execuções de
 \begin{figure}[htb]
   \caption{\label{fig:bench_razao_tamanho}Razão entre os pisos de ciclos do AES-128-GCM e do Ascon-128a, na cifragem e na decifragem, por tamanho de \textit{payload}}
   \begin{center}
-      \includegraphics[width=\textwidth]{figuras/bench_razao_tamanho.png}
+      \includegraphics[width=\textwidth]{felipe/figuras/bench_razao_tamanho.png}
   \end{center}
   \legend{Fonte: elaborado pelos autores.}
 \end{figure}
@@ -386,7 +206,7 @@ O AES-GCM é a cifragem em modo contador (CTR) mais o cálculo da \textit{tag} p
 \begin{figure}[htb]
   \caption{\label{fig:bench_decomposicao_bloco}Custo marginal por bloco de 16 bytes: Ascon-128a completo e AES-128-GCM decomposto em cifra AES (CTR) e GHASH, nas duas placas}
   \begin{center}
-      \includegraphics[width=\textwidth]{figuras/bench_decomposicao_bloco.png}
+      \includegraphics[width=\textwidth]{felipe/figuras/bench_decomposicao_bloco.png}
   \end{center}
   \legend{Fonte: elaborado pelos autores.}
 \end{figure}

@@ -1,0 +1,56 @@
+\section{Requisitos do Sistema de Detecção de Anomalias}
+A incorporação de um modelo de aprendizado de máquina à arquitetura proposta 
+introduz requisitos específicos, distintos dos requisitos de infraestrutura 
+definidos na Seção~\ref{sec:requisitos_infra}. O modelo será treinado e 
+avaliado em ambiente computacional convencional, utilizando os dados 
+históricos do \textit{dataset} Tour Perret. A viabilidade de portabilidade 
+da fase de inferência para o gateway é tratada como perspectiva de 
+continuidade, conforme discutido na Seção~7.3.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Requisitos Funcionais}
+
+\begin{enumerate}
+
+    \item[RF1.] O sistema deve receber como entrada sequências temporais das 
+    variáveis selecionadas, organizadas por dispositivo e ordenadas 
+    cronologicamente.
+
+    \item[RF2.] O sistema deve produzir previsões do comportamento esperado de 
+    cada variável monitorada e calcular o resíduo entre valor previsto e 
+    valor observado para cada instante de tempo.
+
+    \item[RF3.] O sistema deve classificar cada observação como normal ou 
+    potencialmente anômala, com base em um critério de limiarização definido 
+    a partir do conjunto de validação.
+
+    \item[RF4.] O sistema deve permitir comparação quantitativa entre as três 
+    abordagens de modelagem (ARIMA, RNN, LSTM) através de métricas 
+    padronizadas de qualidade de previsão e detecção.
+
+\end{enumerate}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Requisitos Não Funcionais}
+
+\begin{enumerate}
+
+    \item[RNF1.] O treinamento deve ser realizado exclusivamente sobre dados que 
+    representem operação normal da rede, sem contaminação por observações 
+    potencialmente anômalas.
+
+    \item[RNF2.] O processo de treinamento e avaliação deve ser reprodutível, com 
+    registro das sementes de inicialização, hiperparâmetros e critérios de 
+    seleção de ordem utilizados em cada modelo.
+
+\end{enumerate}
+
+Essa orientação fortalece a coerência do trabalho como um todo. Em vez de separar artificialmente a fase de modelagem da fase de implantação, o desenvolvimento já considera que a utilidade prática dos modelos depende de um equilíbrio entre eficácia de detecção e viabilidade de execução em dispositivos restritos. Assim, a implementação proposta dialoga diretamente com a etapa posterior de avaliação energética e computacional.
+
+Sob essa perspectiva, a comparação entre modelos não deverá considerar apenas métricas tradicionais de desempenho, mas também aspectos como simplicidade estrutural, custo computacional, volume de memória.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
