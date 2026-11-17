@@ -1,11 +1,12 @@
 \subsection{Integração progressiva da solução}
 
-A integração seguiu os marcos definidos no Capítulo~\ref{cap:metodo}, e a Tabela~\ref{tab:marcos_cronologia} registra quando cada um foi atingido. Os três primeiros marcos, que estabelecem a cadeia de ferramentas, a inicialização do transceptor e o enlace ponta a ponta, foram concluídos com a coleta de referência de 23 de agosto de 2026, com o quadro ainda em claro. O quinto e o sétimo, que acrescentam o envio ao \textit{backend} e o quadro autenticado, foram desenvolvidos em paralelo e validados juntos na coleta de 24 de setembro de 2026, descrita na Seção~\ref{sec:resultados_infra}. Sobre essa base, a frente de criptografia substitui o algoritmo da camada de cifra por uma opção de compilação, sem alterar o restante do firmware, e a frente de aprendizado de máquina consome a base persistida.
+A integração seguiu sete marcos, cada um com um critério de aceite observável, e a Tabela~\ref{tab:marcos_cronologia} registra quando cada um foi atingido. Os três primeiros, que estabelecem a cadeia de ferramentas, a inicialização do transceptor e o enlace ponta a ponta, foram concluídos com a coleta de referência de 23 de agosto de 2026, com o quadro ainda em claro. O quinto e o sétimo, que acrescentam o envio ao \textit{backend} e o quadro autenticado, foram desenvolvidos em paralelo e validados juntos na coleta de 24 de setembro de 2026, com o AES-128-GCM de linha de base. O sétimo foi concluído em 8 de outubro de 2026, quando a camada Ascon da frente de criptografia entrou no ar sobre o mesmo firmware, trocada por um ambiente de compilação sem alterar o restante do código, e confirmado na coleta noturna de 12 para 13 de outubro, ambas descritas na Seção~\ref{sec:resultados_infra}. A frente de aprendizado de máquina consome a base persistida.
 
 \begin{table}[htb]
 \centering
 \caption{Cronologia dos marcos da infraestrutura}
 \label{tab:marcos_cronologia}
+\small
 \begin{tabular}{clll}
 \hline
 \textbf{Marco} & \textbf{Objetivo} & \textbf{Data} & \textbf{Estado} \\
@@ -15,14 +16,15 @@ A integração seguiu os marcos definidos no Capítulo~\ref{cap:metodo}, e a Tab
 3 & Enlace ponta a ponta & 23 ago. 2026 & concluído \\
 4 & Sensores reais & & pendente \\
 5 & Wi-Fi, HTTP e API & 24 set. 2026 & concluído \\
-6 & Energia & & firmware pronto \\
-7 & Segurança do enlace & 24 set. 2026 & Ascon pendente \\
+6 & Energia & & firmware pronto, não medido \\
+7 & Segurança do enlace & 24 set. 2026 (AES-GCM) & concluído \\
+  &                     & 8 out. 2026 (Ascon-128a) & \\
 \hline
 \end{tabular}
 \legend{Fonte: elaborado pelos autores (2026).}
 \end{table}
 
-Três dificuldades de integração merecem registro, porque afetam a coleta de dados. A primeira: abrir a porta serial do nó reinicia a placa, pois o conversor USB-serial pulsa as linhas de controle ao abrir a conexão; um reinício no meio da coleta zera a sessão. Desde então o nó opera em bateria e sem monitoramento durante as coletas, e o \textit{gateway} é o único ponto de observação. A segunda: o hotspot de celular usado como rede no laboratório é classificado pelo sistema operacional do servidor como rede pública, o que exige uma regra de firewall explícita para a porta da API. A terceira: o relógio do servidor estava cerca de meio segundo atrás do relógio do \textit{gateway}, sincronizado por NTP, o que impede usar a diferença entre o instante de recepção e o de ingestão como medida de latência sem sincronizar o servidor.
+Quatro dificuldades de integração merecem registro, porque afetam a coleta de dados. A primeira: abrir a porta serial do nó reinicia a placa, pois o conversor USB-serial pulsa as linhas de controle ao abrir a conexão; um reinício no meio da coleta zera a sessão. Desde então o nó opera em bateria e sem monitoramento durante as coletas, e o \textit{gateway} é o único ponto de observação. A segunda: o hotspot de celular usado como rede no laboratório é classificado pelo sistema operacional do servidor como rede pública, o que exige uma regra de firewall explícita para a porta da API. A terceira: em 24 de setembro o relógio do servidor estava cerca de meio segundo atrás do relógio do \textit{gateway}, sincronizado por NTP, o que impediu usar a diferença entre o instante de recepção e o de ingestão como medida de latência; com o servidor sincronizado, a medida passou a ser registrada pelo \textit{gateway}, por quadro, a partir da coleta de 12 de outubro. A quarta: o mesmo hotspot caiu durante a coleta noturna de 13 de outubro e não voltou, o que exercitou o armazenamento temporário do \textit{gateway} e a recuperação pelo registro serial, descritos na Seção~\ref{sec:resultados_infra}; para coletas longas, um roteador dedicado substitui o hotspot.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

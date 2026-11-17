@@ -88,40 +88,40 @@ Os requisitos não funcionais da infraestrutura proposta descrevem propriedades 
 \subsection{Rastreabilidade dos requisitos da infraestrutura}
 \label{subsec:rastreabilidade_infra}
 
-A Tabela~\ref{tab:rastreabilidade_infra} relaciona cada requisito ao componente que o atende e à forma como foi verificado. Os detalhes de implementação estão no Capítulo~\ref{cap:desenvolvimento}. Três requisitos estão atendidos apenas em parte e são declarados como tal: o RF1, porque os dados de aplicação ainda são sintéticos; o RF6, cuja lógica foi testada mas cujo reenvio não foi exercitado em uma queda real de rede; e o RNF1, porque o nó ainda não entra em modo de baixo consumo entre transmissões.
+A Tabela~\ref{tab:rastreabilidade_infra} relaciona cada requisito ao componente que o atende e à forma como foi verificado. Os detalhes de implementação estão no Capítulo~\ref{cap:desenvolvimento}. As evidências vêm das quatro coletas em bancada (23 de agosto, 24 de setembro, 8 de outubro e 12 a 13 de outubro de 2026), das cinco suítes de teste executadas nas placas e dos testes automatizados do \textit{backend}. Dois requisitos estão atendidos apenas em parte e são declarados como tal: o RF1, porque os dados de aplicação ainda são sintéticos; e o RNF1, porque o nó ainda não entra em modo de baixo consumo entre transmissões. O RF6, declarado parcial até outubro, foi exercitado em uma queda real de rede em 13 de outubro.
 
-\begin{table}[htb]
+\begin{table}[!htbp]
 \centering
 \caption{Rastreabilidade dos requisitos da infraestrutura}
 \label{tab:rastreabilidade_infra}
-\small
-\begin{tabular}{lp{5,8cm}p{6,2cm}}
+\footnotesize
+\begin{tabular}{lp{5,2cm}p{8cm}}
 \hline
 \textbf{Req.} & \textbf{Onde é atendido} & \textbf{Como foi verificado} \\
 \hline
-RF1  & Firmware do nó; 4 bytes de dados no quadro & Coletas de 23/08 e 24/09; dados sintéticos (parcial) \\
-RF2  & Cabeçalho do quadro: identificador e contador & Teste na placa do quadro; coletas \\
-RF3  & Gateway: recepção no núcleo 1, envio HTTP no núcleo 0 & 857 quadros entregues em 24/09 \\
+RF1  & Firmware do nó; 4 bytes de dados no quadro & Quatro coletas, de 23/08 a 13/10; dados sintéticos (parcial) \\
+RF2  & Cabeçalho do quadro: identificador e contador & Suítes do quadro v2 (14 casos) e v3 (14 casos) na placa; coletas \\
+RF3  & Gateway: recepção no núcleo 1, envio HTTP no núcleo 0 & 6.007 quadros recebidos em 12 a 13/10, 2.432 entregues ao vivo \\
 RF4  & Token no cabeçalho HTTP, comparação em tempo constante & Testes automatizados do backend \\
 RF5  & Banco SQLite com os 12 campos e metadados de ingestão & Testes; conferência serial contra banco \\
-RF6  & Fila e armazenamento temporário de 512 registros no gateway & Lógica testada na placa; não exercitado em campo (parcial) \\
+RF6  & Fila e armazenamento temporário de 512 registros no gateway & Queda real do Wi-Fi em 13/10: 512 retidos, os mais antigos descartados como previsto \\
 RF7  & API de consulta e exportação em CSV & Ferramenta de análise; notebooks \\
-RF8  & Registro serial sob exclusão mútua, anterior ao envio & Coleta de 23/08 sem backend \\
-RF9  & Identificador de sessão: sorteio na inicialização mais contador de sessão & Teste na placa; sessão única em 24/09 \\
-RF10 & Campo de origem por idade do registro na entrega & 857 quadros marcados como tempo real \\
-RF11 & Sinal de vida a cada 30 s na serial e na API & Registro serial; envio à API pendente de gravação \\
-RF12 & Verificação de tamanho, CRC, janela anti-replay e tag & Teste na placa: quadro forjado não avança a janela \\
+RF8  & Registro serial sob exclusão mútua, anterior ao envio & Coleta de 23/08 sem backend; 3.575 quadros recuperados do registro em 13/10 \\
+RF9  & Identificador de sessão: sorteio na inicialização mais contador de sessão & Suíte do gateway na placa; uma sessão distinta por coleta \\
+RF10 & Campo de origem por idade do registro na entrega & 13/10: 2.432 ao vivo e 3.575 relidos do registro serial, distinguidos no banco \\
+RF11 & Sinal de vida a cada 30 s na serial e na API & Registro serial; 669 sinais de vida no banco desde 08/10 \\
+RF12 & Verificação de tamanho, CRC, anti-replay e tag & Suítes v2 e v3 na placa: forjado, repetido e contador alto rejeitados; 0 rejeições indevidas em 6.468 quadros \\
 RNF1 & Potência de 5 dBm; nó sem modo de repouso & Parcial: repouso entre transmissões pendente \\
 RNF2 & Recepção por interrupção; transmissão periódica & Coletas \\
-RNF3 & Dois núcleos com fila de espera zero & 0 perdas em 857 quadros com backend ativo \\
+RNF3 & Dois núcleos com fila de espera zero & 0 perdas em 6.007 quadros com a tarefa de rede ativa \\
 RNF4 & Contrato único compartilhado pelos dois firmwares & Compilação; testes \\
-RNF5 & Armazenamento temporário e espera exponencial de 1 a 30 s & Lógica testada na placa \\
+RNF5 & Armazenamento temporário e espera exponencial de 1 a 30 s & Queda de 13/10: gateway seguiu recebendo e tentando reenviar por 5 h \\
 RNF6 & 12 campos mais identificadores de gateway, sessão e instante UTC & Conferência serial contra banco \\
-RNF7 & Adaptador de cifra com seleção em tempo de compilação & AES-GCM no ar; Ascon pendente \\
+RNF7 & Dois caminhos de cifra, selecionados em tempo de compilação & AES-GCM no ar em 24/09; Ascon-128a no ar desde 08/10 \\
 RNF8 & Mesmos campos das variáveis candidatas dos modelos & Análise das coletas \\
 RNF9 & Quadro de 26 bytes; verificação em tempo de compilação & Compilação \\
-RNF10 & Formatação byte a byte do registro & Teste na placa \\
-RNF11 & Fila entre núcleos com espera zero & 0 perdas com backend ativo \\
+RNF10 & Formatação byte a byte do registro & Suíte do gateway na placa (16 casos, 17/11); ETL compara coleta própria e Tour Perret sem conversão \\
+RNF11 & Fila entre núcleos com espera zero & 0 perdas em 6.007 quadros com envio HTTP concorrente \\
 \hline
 \end{tabular}
 \legend{Fonte: elaborado pelos autores (2026).}
