@@ -3,28 +3,18 @@
 \subsection{Segurança do Ascon-AEAD128 e da variante Ascon-128a}
 A camada criptográfica especificada nesta seção é adicional à proteção já oferecida pelo protocolo de comunicação. A especificação do LoRaWAN determina que o \textit{payload} de aplicação seja cifrado fim a fim entre o dispositivo e o \textit{Application Server}, mas registra que a proteção de integridade não é fim a fim. O \textit{Network Server} pode alterar o conteúdo cifrado em trânsito, ainda que sem conseguir lê-lo, uma vez que detém a chave empregada no cálculo do código de integridade das mensagens. Por esse motivo, a própria norma recomenda que aplicações que exijam confidencialidade e integridade fim a fim empreguem soluções de segurança adicionais \cite{lorawan104}. É essa lacuna de integridade que a camada baseada em Ascon preenche neste trabalho.
 
-Para o uso seguro da cifra, este trabalho adota os requisitos operacionais especificados pelo NIST para o Ascon-AEAD128 \cite{nist800232}. Embora a implementação utilizada corresponda à variante Ascon-128a (versão 1.2), esses requisitos são adotados de forma conservadora como limites aplicáveis, uma vez que ambas as versões compartilham a mesma taxa de processamento e a mesma estrutura de permutação, conforme a Tabela~\ref{tab:parametros_ascon}, enquanto suas diferenças introduzem apenas sobrecarga constante. O primeiro requisito trata da geração da chave criptográfica, que deve seguir os padrões descritos no documento SP 800-133r2 \cite{barker2020nist133}, no qual é estabelecida a operação a seguir.
-
-\[
-K = U \oplus V,
-\]
-
-em que $U$ é uma cadeia de bits extraída de um Gerador de Bits Aleatórios (RBG - \textit{Random Bit Generator}) aprovado, e $V$ consiste em uma sequência de bits gerada independentemente de $U$, podendo ser composta inteiramente por zeros.
-
-As especificações para os geradores de bits aleatórios aprovados estão descritas no documento SP 800-90A \cite{barker2015nist90a}. Neste projeto, é utilizado um Gerador Determinístico de Bits Aleatórios (DRBG - \textit{Deterministic Random Bit Generator}) através do mecanismo CTR\_DRBG. Essa escolha justifica-se pelo fato de que a entropia bruta extraída diretamente do \textit{hardware} pode conter vícios físicos, tornando indispensável um estágio secundário de tratamento e condicionamento algorítmico \cite{turan2018nist90b}. Dessa forma, a implementação fará uso da biblioteca nativa \textit{mbedTLS} do ESP32, que extrai a entropia verdadeira do periférico de \textit{hardware} (TRNG, \textit{True Random Number Generator}) e a processa através do algoritmo CTR\_DRBG, garantindo uma saída perfeitamente balanceada para a geração da chave.
-
-Com base nesses elementos, os requisitos de segurança do Ascon-AEAD128 podem ser organizados em requisitos funcionais e não funcionais.
+Para o uso seguro da cifra, este trabalho adota os requisitos operacionais especificados pelo NIST para o Ascon-AEAD128 \cite{nist800232}. Embora a implementação utilizada corresponda à variante Ascon-128a (versão 1.2), esses requisitos são adotados de forma conservadora como limites aplicáveis, uma vez que as duas versões compartilham os parâmetros da Tabela~\ref{tab:parametros_ascon}. A geração da chave segue o SP 800-133r2 \cite{barker2020nist133} e emprega um gerador de bits aleatórios aprovado nos termos do SP 800-90A \cite{barker2015nist90a}. Os requisitos estão organizados em funcionais e não funcionais.
 
 \subsubsection{Requisitos funcionais}
 
 \begin{enumerate}
     \item[RF-S1.] A implementação da biblioteca \textit{ascon-suite} deve ser validada previamente, conforme discutido na Seção \ref{subsec:validacao-ascon}.
 
-    \item[RF-S2.] A geração da chave criptográfica deve seguir os padrões descritos no documento SP 800-133r2 \cite{barker2020nist133}, adotando a operação $K = U \oplus V$, e empregar um gerador de bits aleatórios aprovado com força de segurança de, no mínimo, 128 bits \cite{nist800232}.
+    \item[RF-S2.] A geração da chave criptográfica deve seguir o SP 800-133r2 \cite{barker2020nist133}, adotando a operação $K = U \oplus V$, em que $U$ é uma cadeia de bits extraída de um gerador de bits aleatórios (RBG, \textit{Random Bit Generator}) aprovado, com força de segurança de no mínimo 128 bits \cite{nist800232}, e $V$ é uma sequência gerada independentemente de $U$, que pode ser composta inteiramente por zeros.
 
     \item[RF-S3.] O sistema deve utilizar um Gerador Determinístico de Bits Aleatórios (DRBG - \textit{Deterministic Random Bit Generator}) através do mecanismo CTR\_DRBG para a geração de chaves criptográficas.
 
-    \item[RF-S4.] A implementação deve fazer uso da biblioteca nativa \textit{mbedTLS} do ESP32 para extrair a entropia verdadeira do periférico de \textit{hardware} (TRNG) e processá-la através do algoritmo CTR\_DRBG.
+    \item[RF-S4.] A implementação deve fazer uso da biblioteca nativa \textit{mbedTLS} do ESP32 para extrair a entropia verdadeira do periférico de \textit{hardware} (TRNG, \textit{True Random Number Generator}) e processá-la através do algoritmo CTR\_DRBG.
 
     \item[RF-S5.] A renovação da chave de um nó deve ser feita por novo provisionamento, onde descarta-se o estado criptográfico do dispositivo, gera-se nele uma chave nova, nas condições do RF-S2 ao RF-S4, e atualiza-se o registro correspondente no receptor. A chave nova deve ser gerada de forma independente da anterior, sem derivar dela nem ser transportada sob sua proteção, como exige o SP 800-133r2 para a substituição de chave comprometida \cite{barker2020nist133}. Como os gatilhos preventivos de renovação (RNF-S3 e RNF-S4) são inalcançáveis na operação prevista, conforme discutido ao final desta seção, a renovação é um procedimento de resposta a um incidente, e não de rotina.
 
@@ -32,7 +22,7 @@ Com base nesses elementos, os requisitos de segurança do Ascon-AEAD128 podem se
 
     \item[RF-S7.] A unicidade do \textit{nonce} exigida pelo RNF-S2 deve ser assegurada por um contador monotônico mantido em memória não volátil no próprio dispositivo, incrementado a cada operação de cifragem e persistido antes da transmissão da mensagem correspondente, de modo que uma interrupção de energia descarte valores em vez de repeti-los. Após uma reinicialização, a leitura do valor persistido deve preceder qualquer operação criptográfica. O contador não deve ser derivado de valores mantidos pela pilha de comunicação, para que a garantia de unicidade não dependa de decisões tomadas em outra camada.
 
-    \item[RF-S8.] A camada criptográfica deve detectar e rejeitar qualquer alteração da mensagem em trânsito, seja no texto cifrado, nos dados associados ou na própria \textit{tag} de autenticação. Em caso de falha na verificação de integridade, a decifragem deve retornar erro sem entregar à aplicação qualquer fragmento de texto claro \cite{nist800232}. Este requisito responde à lacuna descrita no início desta seção. A norma do LoRaWAN admite que o \textit{Network Server} altere o conteúdo cifrado em trânsito, ainda que sem conseguir lê-lo \cite{lorawan104}, e é a verificação da \textit{tag} pelo destinatário final que torna essa alteração detectável.
+    \item[RF-S8.] A camada criptográfica deve detectar e rejeitar qualquer alteração da mensagem em trânsito, seja no texto cifrado, nos dados associados ou na própria \textit{tag} de autenticação. Em caso de falha na verificação de integridade, a decifragem deve retornar erro sem entregar à aplicação qualquer fragmento de texto claro \cite{nist800232}. Este requisito responde à lacuna de integridade descrita no início desta seção.
 
     \item[RF-S9.] O receptor deve recusar mensagens cujo \textit{nonce} já tenha sido aceito, mantendo registro do maior valor recebido de cada dispositivo e descartando valores repetidos ou regressivos. O modo AEAD garante integridade, mas não frescor, um pacote válido retransmitido sem alteração é legítimo do ponto de vista criptográfico, e sua detecção depende de estado mantido no receptor. Este requisito complementa o RF-S7, que assegura a unicidade do \textit{nonce} na origem, estendendo a garantia ao destino.
 \end{enumerate}
