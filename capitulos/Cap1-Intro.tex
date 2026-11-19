@@ -50,7 +50,7 @@ Para o alcance do objetivo geral, foram definidos os seguintes objetivos especí
 \begin{itemize}
     \item Construir e validar uma infraestrutura de comunicação LoRa ponto a ponto, composta por nó sensor, \textit{gateway} e \textit{backend}, que registre os metadados de recepção de cada quadro.
     \item Treinar e testar modelos de \textit{Machine Learning}, utilizando os \textit{datasets} selecionados, para atuar na identificação e mitigação de ameaças ativas, tais como \textit{jamming}, \textit{spoofing} e ataques de Negação de Serviço (DoS).
-    \item Implementar o algoritmo da família Ascon no nó sensor para estabelecer uma infraestrutura que garanta a confidencialidade, a autenticidade e a integridade dos dados transmitidos, com baixo custo computacional.
+    \item Integrar ao nó sensor uma implementação do algoritmo Ascon e desenvolver sobre ela uma camada de segurança que garanta a confidencialidade, a autenticidade e a integridade dos dados transmitidos, com baixo custo computacional.
     \item Desenvolver o protótipo do sistema integrando as camadas de comunicação, de criptografia e de detecção
     \item Analisar o nível de segurança global oferecido pelo conjunto, validando a eficácia da solução proposta frente às restrições do hardware, em termos de latência, memória e consumo energético.
 \end{itemize}
@@ -76,4 +76,4 @@ O Capítulo \ref{cap:especificacao} trata da especificação da arquitetura do s
 
 O Capítulo \ref{cap:desenvolvimento} é dedicado ao projeto e desenvolvimento. Nesta etapa, são descritas as tecnologias e ferramentas práticas utilizadas, a arquitetura montada, a infraestrutura de comunicação implementada, os testes realizados e a discussão dos resultados obtidos, incluindo os resultados de operação do enlace.
 
-Por fim, o Capítulo \ref{cap:consideracoes} apresenta as considerações finais, sumarizando as conclusões extraídas da pesquisa e apontando direcionamentos para futuras implementações e melhorias que podem surgir a partir deste trabalho.
+Por fim, o Capítulo \ref{cap:consideracoes} apresenta as considerações finais, com as conclusões extraídas da pesquisa, as contribuições da equipe e os direcionamentos para futuras implementações e melhorias que podem surgir a partir deste trabalho.

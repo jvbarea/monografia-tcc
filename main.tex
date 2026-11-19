@@ -396,24 +396,20 @@
 % separadas entre si por ponto e finalizadas também por ponto.
 \setlength{\absparsep}{18pt} % ajusta o espaçamento dos parágrafos do resumo
 \begin{resumo}
-A segurança da informação no protocolo \textit{Long Range Wide Area Network} LoRaWAN é um desafio crítico para aplicações de Internet das Coisas (IoT), devido à vulnerabilidade a ataques, como \textit{jamming}, \textit{spoofing}, DoS e \textit{Man-in-the-middle}, combinada às rigorosas restrições energéticas e computacionais dos dispositivos de borda. Diante desse cenário, o presente trabalho tem como objetivo desenvolver e avaliar uma arquitetura de segurança integrada para dispositivos embarcados. A metodologia proposta baseia-se na implementação do algoritmo de criptografia leve Ascon, visando garantir a confidencialidade e integridade dos dados, operando em conjunto com um modelo de aprendizado de máquina focado na detecção de anomalias e intrusões no tráfego da rede. O protótipo será construído utilizando microcontroladores com restrição de recursos. Espera-se que a integração do padrão Ascon com a detecção com o aprendizado de máquina mitigue vetores de ataque comuns em redes LoRaWAN sem inviabilizar a operação sustentável dos dispositivos, resultando em uma solução robusta, autônoma e aplicável a ambientes de automação industrial e cidades inteligentes.
+Redes de Internet das Coisas (IoT) baseadas em LoRa operam com dispositivos restritos em energia, memória e processamento, o que dificulta proteger os dados transmitidos e perceber comportamentos anômalos na rede. Este trabalho implementa e avalia um sistema de comunicação LoRa ponto a ponto, com o LoRaWAN como modelo de referência, que integra criptografia leve com o padrão Ascon e detecção de anomalias por aprendizado de máquina. Uma bancada própria, com nó sensor, \textit{gateway} e \textit{backend}, registra os metadados de recepção de cada quadro. A camada de segurança é uma biblioteca construída sobre uma implementação de código aberto do Ascon-128a, validada pelos vetores oficiais do algoritmo e por 4.907 adulterações de pacote, todas rejeitadas. Medido em dois microcontroladores ESP32, o Ascon-128a em \textit{software} cifra a mensagem típica de 23 bytes em 25 a 27~$\mu$s, sem alocação dinâmica de memória e com tempo de execução que não varia com os dados de entrada. O AES-128-GCM apoiado no acelerador de \textit{hardware} leva de 1,3 a 3,5 vezes esse tempo e gasta de 1,6 a 3,5 vezes a energia por operação. Na coleta de referência, o \textit{gateway} recebe 6.007 quadros protegidos pelo Ascon-128a em 8,3 horas, sem perda de rádio e sem rejeição. A detecção de anomalias é especificada como regressão temporal, com modelos ARIMA, RNN e LSTM ajustados ao tráfego normal de um conjunto de dados público, em que o desvio entre o valor previsto e o observado indica a anomalia. Os resultados mostram que a criptografia leve em \textit{software} dispensa o acelerador de \textit{hardware} nos pacotes pequenos típicos dessas redes, e que o custo de proteger o enlace está nos bytes acrescentados a cada mensagem, e não no processamento.
 
- \textbf{Palavras-chave}: LoRaWAN; IoT; Detecção de Anomalias; Criptografia Leve.
+ \textbf{Palavras-chave}: LoRaWAN. Internet das Coisas. Criptografia leve. Ascon. Detecção de anomalias.
 \end{resumo}
-
-% resumo em inglês
 \begin{resumo}[Abstract]
  \begin{otherlanguage*}{english}
-   Information security in the LoRaWAN protocol is a critical challenge for Internet of Things (IoT) applications, due to vulnerability to attacks such as \textit{jamming}, \textit{spoofing}, DoS, and \textit{Man-in-the-middle}, combined with the strict energy and computational constraints of edge devices. In this context, the present work aims to develop and evaluate an integrated security architecture for embedded devices. The proposed methodology is based on the implementation of the lightweight cryptographic algorithm Ascon to ensure data confidentiality and integrity, operating alongside a machine learning model focused on the detection of anomalies and intrusions in network traffic. The prototype will be built using resource-constrained microcontrollers. It is expected that integrating the Ascon standard with anomaly detection through machine learning will mitigate common attack vectors in LoRaWAN networks without compromising the sustainable operation of the devices, resulting in a robust, autonomous solution applicable to industrial automation and smart city environments.
+   Internet of Things (IoT) networks based on LoRa rely on devices with limited energy, memory and processing power, which makes it hard to protect transmitted data and to notice anomalous network behavior. This work implements and evaluates a point-to-point LoRa communication system, with LoRaWAN as the reference model, that integrates lightweight cryptography with the Ascon standard and anomaly detection by machine learning. A purpose-built test bench, with a sensor node, a gateway and a backend, records the reception metadata of every frame. The security layer is a library built on an open-source implementation of Ascon-128a, validated against the official test vectors of the algorithm and against 4,907 packet tampering cases, all of them rejected. Measured on two ESP32 microcontrollers, Ascon-128a in software encrypts the typical 23-byte message in 25 to 27~$\mu$s, with no dynamic memory allocation and with an execution time that does not vary with the input data. AES-128-GCM backed by the hardware accelerator takes 1.3 to 3.5 times as long and uses 1.6 to 3.5 times the energy per operation. In the reference collection, the gateway receives 6,007 frames protected by Ascon-128a in 8.3 hours, with no radio loss and no rejection. Anomaly detection is specified as temporal regression, with ARIMA, RNN and LSTM models fitted to the normal traffic of a public dataset, in which the deviation between the predicted and the observed value indicates the anomaly. The results show that lightweight cryptography in software makes the hardware accelerator unnecessary for the small packets typical of these networks, and that the cost of protecting the link lies in the bytes added to each message, not in processing.
 
    \vspace{\onelineskip}
  
    \noindent 
-   \textbf{Keywords}: LoRaWAN; IoT; Anomaly Detection; Lightweight Cryptography.
+   \textbf{Keywords}: LoRaWAN. Internet of Things. Lightweight cryptography. Ascon. Anomaly detection.
  \end{otherlanguage*}
 \end{resumo}
-
-% % resumo em francês 
 % \begin{resumo}[Résumé]
 %  \begin{otherlanguage*}{french}
 %     Il s'agit d'un résumé en français.
@@ -443,9 +439,9 @@ A segurança da informação no protocolo \textit{Long Range Wide Area Network} 
 % ---
 % inserir lista de quadros
 % ---
-%\pdfbookmark[0]{\listofquadrosname}{loq}
-%\listofquadros*
-%\cleardoublepage
+\pdfbookmark[0]{\listofquadrosname}{loq}
+\listofquadros*
+\cleardoublepage
 % ---
 
 % ---
@@ -471,12 +467,13 @@ A segurança da informação no protocolo \textit{Long Range Wide Area Network} 
   \item[ARIMA] AutoRegressive Integrated Moving Average
   \item[BW] Bandwidth
   \item[CAESAR] Competition for Authenticated Encryption: Security, Applicability, and Robustness
+  \item[CMAC] Cipher-based Message Authentication Code
   \item[CPU] Central Processing Unit
   \item[CR] Coding Rate
   \item[CRC] Cyclic Redundancy Check
   \item[CSS] Chirp Spread Spectrum
-  \item[CTR] Counter Mode
   \item[CSV] Comma-Separated Values
+  \item[CTR] Counter Mode
   \item[CXOF128] Customizable Extendable-Output Function, 128-bit
   \item[DDoS] Distributed Denial of Service
   \item[DES] Data Encryption Standard
@@ -484,10 +481,12 @@ A segurança da informação no protocolo \textit{Long Range Wide Area Network} 
   \item[DoS] Denial of Service
   \item[DRBG] Deterministic Random Bit Generator
   \item[ED] End Device
-  \item[ESP32] Espressif 32
   \item[ESP-IDF] Espressif IoT Development Framework
+  \item[ESP32] Espressif 32
+  \item[ETL] Extract, Transform, Load
   \item[FCnt] Frame Counter
   \item[FOpts] Frame Options
+  \item[FPGA] Field-Programmable Gate Array
   \item[FPort] Frame Port
   \item[GCM] Galois/Counter Mode
   \item[GHASH] Galois Hash
@@ -506,25 +505,29 @@ A segurança da informação no protocolo \textit{Long Range Wide Area Network} 
   \item[LoRaWAN] Long Range Wide Area Network
   \item[LPWAN] Low-Power Wide-Area Network
   \item[LSTM] Long Short-Term Memory
-  \item[MAC] Medium Access Control
+  \item[MAC] Medium Access Control, na camada de enlace, e Message Authentication Code, na autenticação de mensagens
   \item[MAE] Mean Absolute Error
   \item[MIC] Message Integrity Code
+  \item[MitM] Man-in-the-Middle
   \item[ML] Machine Learning
   \item[NIST] National Institute of Standards and Technology
   \item[NTP] Network Time Protocol
   \item[NVS] Non-Volatile Storage
-  \item[OTP] One-Time Programmable
   \item[OTAA] Over-the-Air Activation
+  \item[OTP] One-Time Programmable
   \item[PHY] Physical Layer
   \item[RAM] Random Access Memory
   \item[RBG] Random Bit Generator
   \item[RF] Rádio Frequência
+  \item[RM-ODP] Reference Model of Open Distributed Processing
   \item[RMSE] Root Mean Squared Error
   \item[RNN] Recurrent Neural Network
   \item[RSSI] Received Signal Strength Indicator
   \item[SF] Spreading Factor
   \item[SIV] Synthetic Initialization Vector
   \item[SNR] Signal-to-Noise Ratio
+  \item[SPI] Serial Peripheral Interface
+  \item[TCXO] Temperature-Compensated Crystal Oscillator
   \item[TinyML] Tiny Machine Learning
   \item[TRNG] True Random Number Generator
   \item[UML] Unified Modeling Language

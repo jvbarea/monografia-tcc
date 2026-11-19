@@ -11,7 +11,7 @@ K = U \oplus V,
 
 em que $U$ é uma cadeia de bits extraída de um Gerador de Bits Aleatórios (RBG - \textit{Random Bit Generator}) aprovado, e $V$ consiste em uma sequência de bits gerada independentemente de $U$, podendo ser composta inteiramente por zeros.
 
-As especificações para os geradores de bits aleatórios aprovados estão descritas no documento SP 800-90A \cite{barker2015nist90a}. Neste projeto, é utilizado um Gerador Determinístico de Bits Aleatórios (DRBG - \textit{Deterministic Random Bit Generator}) através do mecanismo CTR\_DRBG. Essa escolha justifica-se pelo fato de que a entropia bruta extraída diretamente do \textit{hardware} pode conter vícios físicos, tornando indispensável um estágio secundário de tratamento e condicionamento algorítmico \cite{turan2018nist90b}. Dessa forma, a implementação fará uso da biblioteca nativa \textit{mbedTLS} do ESP32, que extrai a entropia verdadeira do periférico de \textit{hardware} (TRNG) e a processa através do algoritmo CTR\_DRBG, garantindo uma saída perfeitamente balanceada para a geração da chave.
+As especificações para os geradores de bits aleatórios aprovados estão descritas no documento SP 800-90A \cite{barker2015nist90a}. Neste projeto, é utilizado um Gerador Determinístico de Bits Aleatórios (DRBG - \textit{Deterministic Random Bit Generator}) através do mecanismo CTR\_DRBG. Essa escolha justifica-se pelo fato de que a entropia bruta extraída diretamente do \textit{hardware} pode conter vícios físicos, tornando indispensável um estágio secundário de tratamento e condicionamento algorítmico \cite{turan2018nist90b}. Dessa forma, a implementação fará uso da biblioteca nativa \textit{mbedTLS} do ESP32, que extrai a entropia verdadeira do periférico de \textit{hardware} (TRNG, \textit{True Random Number Generator}) e a processa através do algoritmo CTR\_DRBG, garantindo uma saída perfeitamente balanceada para a geração da chave.
 
 Com base nesses elementos, os requisitos de segurança do Ascon-AEAD128 podem ser organizados em requisitos funcionais e não funcionais.
 
@@ -62,12 +62,12 @@ Com base nesses elementos, os requisitos de segurança do Ascon-AEAD128 podem se
 Diante desses requisitos, alguns deles possuem impacto prático reduzido no contexto deste projeto. Como as redes LoRaWAN operam com taxas de transmissão extremamente baixas e pacotes pequenos, atingir o limite de $2^{54}$ bytes processados sob uma mesma chave é inviável durante a vida útil física do dispositivo. Da mesma forma, considerando o uso de uma \textit{tag} de 128 bits, o limite tolerado antes da obrigatoriedade de rotação da chave é de $2^{96}$ falhas de decifragem. Alcançar esse volume de tentativas de ataques de injeção na rede é improvável, dadas as severas restrições de tempo de transmissão inerentes ao protocolo.
 
 \subsubsection{Rastreabilidade}
-A Tabela~\ref{tab:rastreabilidade_ascon} relaciona cada requisito à seção do Capítulo~\ref{cap:desenvolvimento} que o verifica e à forma de verificação. Os requisitos RNF-S3 e RNF-S4 não têm verificação experimental, porque seus limites são inalcançáveis na operação prevista, como discutido acima. A biblioteca encerra o uso da chave ao fim do contador de 32 bits, o que corresponde a menos de $2^{40}$ bytes processados com mensagens de até 220 bytes, o tamanho máximo na configuração padrão da biblioteca, muito antes do limite de $2^{54}$.
+O Quadro~\ref{qua:rastreabilidade_ascon} relaciona cada requisito à seção do Capítulo~\ref{cap:desenvolvimento} que o verifica e à forma de verificação. Os requisitos RNF-S3 e RNF-S4 não têm verificação experimental, porque seus limites são inalcançáveis na operação prevista, como discutido acima. A biblioteca encerra o uso da chave ao fim do contador de 32 bits, o que corresponde a menos de $2^{40}$ bytes processados com mensagens de até 220 bytes, o tamanho máximo na configuração padrão da biblioteca, muito antes do limite de $2^{54}$.
 
-\begin{table}[htb]
+\begin{quadro}[htb]
 \centering
 \caption{Rastreabilidade dos requisitos de segurança}
-\label{tab:rastreabilidade_ascon}
+\label{qua:rastreabilidade_ascon}
 \small
 \begin{tabular}{lp{3,4cm}>{\raggedright\arraybackslash}p{7,6cm}}
 \hline
@@ -77,7 +77,7 @@ RF-S1 & Seção~\ref{subsec:kat_resultados} & 1.089 vetores oficiais no computad
 RF-S2 a RF-S4 & Seção~\ref{subsec:asconsecure} & Chave gerada no nó pelo CTR\_DRBG da \textit{mbedTLS}, semeado pelo gerador de \textit{hardware}, por inspeção do código do provisionamento \\
 RF-S5 & Seção~\ref{subsec:asconsecure} & Renovação por descarte do estado e novo provisionamento, sem chave no ar \\
 RF-S6 & Seção~\ref{subsec:asconsecure} & Uma chave por nó, e o receptor guarda uma por nó registrado \\
-RF-S7 & Seção~\ref{subsec:asconsecure} & Contador na NVS reservado em blocos de 32 antes do uso, independente do contador de quadros \\
+RF-S7 & Seção~\ref{subsec:asconsecure} & Contador na memória não volátil (NVS) reservado em blocos de 32 antes do uso, independente do contador de quadros \\
 RF-S8 & Seções~\ref{subsec:aead_resultados} e \ref{subsec:asconsecure} & 4.907 adulterações rejeitadas nas duas placas, nenhum byte de texto claro entregue \\
 RF-S9 & Seção~\ref{subsec:asconsecure} & Receptor descarta contador igual ou menor que o último aceito, gravado antes da entrega \\
 RNF-S1 & Seção~\ref{subsec:asconsecure} & Entropia bruta condicionada pelo CTR\_DRBG \\
@@ -91,4 +91,4 @@ RNF-S9 & Seção~\ref{subsec:memoria_tempo} & Piso idêntico em cinco classes de
 \hline
 \end{tabular}
 \legend{Fonte: elaborado pelos autores.}
-\end{table}
+\end{quadro}
