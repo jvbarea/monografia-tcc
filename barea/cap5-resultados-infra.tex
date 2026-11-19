@@ -1,9 +1,9 @@
 \section{Resultados da infraestrutura de comunicação}
 \label{sec:resultados_infra}
 
-\subsection{Configuração da bancada e métricas}
+\subsection{Configuração do enlace}
 
-As duas placas permaneceram estáticas, a poucos metros uma da outra, em ambiente interno. A Tabela~\ref{tab:parametros_enlace} apresenta os parâmetros do enlace e a razão de cada escolha. O nó foi alimentado por bateria portátil e não foi conectado a computador durante as coletas; o \textit{gateway} registrou cada quadro na serial e, a partir da segunda coleta, também no \textit{backend}. Nas duas últimas coletas, já com o Ascon-128a no enlace, o \textit{gateway} registrou ainda, para cada quadro, o tempo da decifragem e o tempo da validação completa (autenticação, verificação do contador e gravação do maior contador aceito), enviados ao \textit{backend} junto com os metadados de recepção. Ao fim de cada coleta, o registro serial e o banco de dados foram conferidos quadro a quadro.
+As coletas seguiram o protocolo de bancada da Subseção~\ref{subsec:metodo_infra}, e as quatro métricas usadas a seguir (perda de rádio, cadência, RSSI e SNR) são as definidas ali. A Tabela~\ref{tab:parametros_enlace} apresenta os parâmetros do enlace e a razão de cada escolha. O \textit{gateway} registrou cada quadro na serial e, a partir da segunda coleta, também no \textit{backend}. Nas duas últimas coletas, já com o Ascon-128a no enlace, registrou ainda, para cada quadro, o tempo da decifragem e o tempo da validação completa (autenticação, verificação do contador e gravação do maior contador aceito), enviados ao \textit{backend} junto com os metadados de recepção. Ao fim de cada coleta com \textit{backend}, o registro serial e o banco de dados foram conferidos quadro a quadro.
 
 \begin{table}[htb]
 \centering
@@ -23,8 +23,6 @@ Período & 5 s & Agendamento em tempo absoluto, sem acúmulo de atraso. \\
 \end{tabular}
 \legend{Fonte: elaborado pelos autores (2026).}
 \end{table}
-
-A qualidade do enlace é descrita por quatro métricas, todas derivadas do registro do \textit{gateway}. A \textbf{perda de rádio} é o número de contadores ausentes na faixa observada em uma sessão, excluídos os saltos por reinício do nó: como o contador é persistido em blocos de 32, um reinício o faz avançar para o próximo múltiplo, e os valores pulados nunca foram transmitidos. Um buraco é classificado como reinício quando o novo contador é múltiplo de 32 e o intervalo entre os dois quadros recebidos é menor do que 75\% do intervalo que a perda dos quadros ausentes teria produzido. A \textbf{cadência} é a média e o desvio padrão do intervalo entre quadros de contadores consecutivos; intervalos que atravessam um buraco não entram, e o primeiro quadro de cada sessão tem intervalo nulo, não zero. \textbf{RSSI} e \textbf{SNR} são descritos por média e faixa.
 
 \subsection{Coletas realizadas}
 

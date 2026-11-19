@@ -32,5 +32,26 @@ A utilização de um diagrama de sequência nessa etapa é importante porque per
 
 Essa representação também ajuda a evidenciar que o sistema foi concebido para operar de forma orientada a evento. Em vez de depender de comunicação contínua, o fluxo é ativado pela geração e recepção das mensagens produzidas em campo, o que torna a proposta mais compatível com o tipo de aplicação e com as restrições energéticas associadas aos dispositivos embarcados.
 
+\subsection{Bancada, protocolo de coleta e métricas}
+\label{subsec:metodo_infra}
+
+A infraestrutura foi construída e avaliada em bancada. Os materiais são duas placas Heltec WiFi LoRa 32 V3 \cite{heltec_wifi_lora_32_v3}, uma no papel de nó e outra no de \textit{gateway}, e um computador na mesma rede local, que executa o \textit{backend}. Nas coletas as placas ficam estáticas, a poucos metros uma da outra, em ambiente interno. O protocolo parte de uma restrição do hardware: abrir a porta serial de uma placa a reinicia, de modo que monitorar o nó interromperia a sessão em curso. Por isso o nó opera em bateria, sem conexão a computador, e o \textit{gateway} é o único ponto de observação. Ele registra cada quadro recebido em uma linha na interface serial e, de forma independente, o envia ao \textit{backend}; ao fim da coleta, o registro serial e o banco de dados são conferidos quadro a quadro, para que uma falha da rede entre \textit{gateway} e \textit{backend} não seja contada como falha do enlace de rádio.
+
+A qualidade do enlace é descrita por quatro métricas, todas derivadas do registro do \textit{gateway}. A \textbf{perda de rádio} é o número de contadores ausentes na faixa observada em uma sessão, excluídos os saltos por reinício do nó: como o nó grava o contador na memória não volátil em blocos de 32, um reinício o faz avançar para o próximo múltiplo, e os valores pulados nunca foram transmitidos. Um buraco é classificado como reinício quando o novo contador é múltiplo de 32 e o intervalo entre os dois quadros recebidos é menor do que 75\% do intervalo que a perda dos quadros ausentes teria produzido. A \textbf{cadência} é a média e o desvio padrão do intervalo entre quadros de contadores consecutivos; intervalos que atravessam um buraco não entram, e o primeiro quadro de cada sessão tem intervalo nulo, não zero. \textbf{RSSI} e \textbf{SNR} são descritos por média e faixa.
+
+A construção seguiu sete marcos, cada um com um critério de aceite verificado na própria placa:
+
+\begin{enumerate}
+    \item cadeia de ferramentas: o firmware é compilado e gravado nas duas placas;
+    \item rádio: o transceptor inicializa com os parâmetros do enlace;
+    \item enlace ponta a ponta: o \textit{gateway} registra cada quadro recebido, com RSSI e SNR;
+    \item sensores reais: os dados de aplicação deixam de ser sintéticos;
+    \item Wi-Fi, HTTP e API: o \textit{backend} recebe e persiste os quadros encaminhados pelo \textit{gateway};
+    \item energia: o consumo do nó é medido por estado de operação, por transmissão e por cifragem;
+    \item segurança do enlace: o quadro é cifrado e autenticado, e o \textit{gateway} rejeita quadros forjados e repetidos.
+\end{enumerate}
+
+Os três primeiros são sequenciais, da cadeia de ferramentas ao enlace ponta a ponta. Os outros quatro acrescentam sensores, rede, medição de energia e segurança sobre essa base e não dependem uns dos outros. Os parâmetros do enlace e as coletas realizadas estão na Seção~\ref{sec:resultados_infra}, e a cronologia dos marcos, na Tabela~\ref{tab:marcos_cronologia}.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
