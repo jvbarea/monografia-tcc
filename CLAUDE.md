@@ -31,7 +31,13 @@ pergunte. Regras próprias de cada autor ficam no `CLAUDE.md` da sua pasta.
 - **Nada inexistente.** Toda `\cite` com entrada no `.bib`, criada junto e
   conferida (URL, data de acesso, autores); toda `\ref` com `\label`; toda
   figura presente em `figuras/`. Se a fonte não existe, não citar.
-- **Sem travessão** (`--`, `---`, "—"). Vírgula, dois pontos ou ponto.
+- **Padrão de escrita na skill `tcc-escrita`.** Ordem das frentes, tempo
+  verbal, numeração de requisitos, termos, legendas e pontuação estão em
+  `.claude/skills/tcc-escrita/SKILL.md`, e valem para os três autores.
+  Carregar a skill antes de escrever ou revisar texto e rodar
+  `python3 .claude/skills/tcc-escrita/scripts/checar.py --autor <pasta>` antes
+  do pull request. Regra de escrita nova entra na skill, não neste arquivo nem
+  no `CLAUDE.md` das pastas, para não haver duas versões.
 - **Números** vêm dos dados e documentos de cada frente, com a fonte
   anotada; não inventar nem arredondar além do que a fonte dá.
 - **Pergunta não altera arquivo.** Dúvida do usuário: ler e responder;

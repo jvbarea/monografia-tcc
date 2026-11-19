@@ -120,9 +120,10 @@ Depois, no GitHub, *Compare & pull request*. A Action compila o PDF; quando
 ficar verde, quem abriu dá o merge. Mudanças de uma linha podem ir direto em
 `main`, com `git pull` antes.
 
-Regras do texto: só citar o que existe no `.bib`; sem travessão
-(`--`, `---`, "—"); figuras em PNG na sua pasta `figuras/`. Tudo isso está
-no `README.md` e no `CLAUDE.md`.
+Regras do texto: só citar o que existe no `.bib`; figuras em PNG na sua
+pasta `figuras/`; padrão de escrita (pontuação, tempo verbal, termos,
+legendas) na skill `tcc-escrita`. Tudo isso está no `README.md` e no
+`CLAUDE.md`.
 
 ## 6. Claude Code (opcional)
 
@@ -130,6 +131,13 @@ Quem usa Claude Code abre a pasta do repositório. O `CLAUDE.md` da raiz tem
 as regras comuns; cada autor pode criar um `CLAUDE.md` na própria pasta com
 as regras e as fontes da sua frente (o de `barea/` serve de exemplo). O
 Claude lê os dois quando trabalha dentro da pasta.
+
+O padrão de escrita comum aos três fica na skill `tcc-escrita`, em
+`.claude/skills/tcc-escrita/`. O Claude a carrega sozinho ao escrever ou
+revisar texto, ou a pedido ("usa a skill tcc-escrita no Cap. 5"). O script
+dela roda sem Claude: `python3 .claude/skills/tcc-escrita/scripts/checar.py
+--autor <pasta>`. O `CLAUDE.md` da pasta do autor guarda só fatos e fontes
+da frente, não regras de escrita.
 
 ## Problemas conhecidos
 

@@ -29,6 +29,7 @@ tadaki/                   detecção por aprendizado de máquina (Celso)        
 <autor>/refs.bib          entradas citadas só por esta frente                autor
 <autor>/figuras/          figuras das seções do autor                        autor
 <autor>/CLAUDE.md         regras e fontes da frente, para o Claude do autor  autor
+.claude/skills/tcc-escrita padrão de escrita e script de checagem            grupo
 abntex2*, *.bst           classe abnTeX2, versionada para compilar igual     ninguém
 ficha.pdf                 ficha catalográfica provisória                     grupo, após a defesa
 ```
@@ -89,8 +90,11 @@ Code depois de instalar o Perl, para a extensão enxergar o PATH novo.
   `main.log` diz a linha.
 - **Só citar o que existe.** Toda `\cite` precisa de entrada no `.bib`; toda
   `\ref` precisa de `\label`; toda figura precisa estar em `figuras/`.
-- **Sem travessão** no texto (nem `--`, nem `---`). Usar vírgula, dois
-  pontos ou ponto.
+- **Padrão de escrita em um lugar só.** Ordem das frentes, tempo verbal,
+  requisitos, termos, legendas e pontuação estão na skill `tcc-escrita`
+  (`.claude/skills/tcc-escrita/SKILL.md`). O script
+  `python3 .claude/skills/tcc-escrita/scripts/checar.py --autor <pasta>`
+  aponta o que foge do padrão, com arquivo e linha.
 - **Figuras** com nome que diga o conteúdo (`cadencia_coletas.png`), em PNG,
   sem versões duplicadas.
 - **Commits** curtos em português dizendo o que mudou e onde:
