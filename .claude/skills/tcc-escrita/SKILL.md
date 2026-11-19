@@ -112,10 +112,11 @@ na primeira ocorrência de cada capítulo e constam na lista de siglas do `main.
 
 ### 8. Convenções de forma
 
-- Legenda de tabela e figura. `\caption{...}` acima da tabela e abaixo da figura, seguido de
-  `\legend{Fonte: elaborado pelos autores}` ou `\legend{Fonte: \cite{chave}}`. "elaborado"
-  em minúscula.
-- Rótulos com prefixo. `fig:`, `tab:`, `sec:`, `subsec:`, `cap:`, `eq:`. Sem rótulos soltos
+- Legenda de tabela, quadro e figura. `\caption{...}` sempre acima, nos três casos, e a fonte
+  abaixo, com `\legend{Fonte: elaborado pelos autores}` ou `\legend{Fonte: \cite{chave}}`.
+  "elaborado" em minúscula.
+- Tabela é para dado numérico. Quando o conteúdo é só texto, usar o ambiente `quadro`.
+- Rótulos com prefixo. `fig:`, `tab:`, `qua:`, `sec:`, `subsec:`, `cap:`, `eq:`. Sem rótulos soltos
   como `messages_abc`.
 - Referências cruzadas sempre com `\ref` ou `\autoref`, nunca número digitado.
 - Citação com `\cite{chave}` entre parênteses no fim da frase. `\citeonline` só quando o
@@ -139,7 +140,7 @@ Lista de verificação manual, depois do script.
 - [ ] Nenhum identificador de requisito sem prefixo de frente ou repetido.
 - [ ] Seções de resultado fecham com requisitos atendidos e "Limitações".
 - [ ] Um termo por conceito, estrangeirismo em itálico.
-- [ ] Toda tabela e figura tem `\caption`, `\legend{Fonte:` e rótulo com prefixo.
+- [ ] Toda tabela, quadro e figura tem `\caption` acima, `\legend{Fonte:` abaixo e rótulo com prefixo.
 - [ ] Nenhuma subseção duplicada no capítulo.
 - [ ] Nenhum título com "Preliminares", "Previstas", "Propostas".
 - [ ] Cap1 e Cap6, se tocados, continuam espelhados.
