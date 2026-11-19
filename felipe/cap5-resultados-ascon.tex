@@ -138,6 +138,7 @@ Por fim, avaliou-se a resistência a ataques de canal colateral baseados em temp
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Comparativo com AES-128-GCM}
+\label{subsec:comparativo_aes}
 
 Para responder à questão central levantada na Seção 2.2.2, se a migração para criptografia leve em software traz vantagem real frente ao acelerador de \textit{hardware} já presente nas placas comerciais, comparou-se o Ascon-128a (software) com o AES-128-GCM (\textit{Galois/Counter Mode}) na mesma execução e sob as mesmas condições, nas duas placas. O AES-GCM foi avaliado por meio da biblioteca \textit{mbedTLS} do próprio \textit{core} do ESP32, com a chave fixada uma vez por execução, como num nó que possui uma única chave. Nos dois chips, apenas o bloco AES é executado no acelerador de \textit{hardware}. A autenticação (GHASH) permanece em \textit{software}, e nenhum dos dois declara suporte a GCM no acelerador \cite{espressif2026idf}. As placas diferem no caminho pelo qual o driver alimenta o acelerador. No ESP32 clássico a CPU escreve e lê um bloco de 16 bytes por vez, e no ESP32-S3 o driver usa DMA \cite{espressif2026idf}.
 
@@ -213,7 +214,41 @@ O AES-GCM é a cifragem em modo contador (CTR) mais o cálculo da \textit{tag} p
 
 No ESP32-S3, o caminho por DMA reduz o custo por bloco a 49 ciclos, mas cobra caro por chamada. Cada transferência exige preparar e depois liberar o canal de DMA \cite{espressif2026idf}, e o AES-CTR de 16 bytes custou 8.218 ciclos, contra 2.316 no ESP32 clássico. Como o GCM faz duas transferências por mensagem, uma para os dados e outra para a \textit{tag}, sua parcela fixa chega a cerca de 18.500 ciclos, e é isso que torna o AES-GCM 3,5 vezes mais lento que o Ascon na mensagem de 23 bytes. O bloco parcial recebe tratamento à parte no driver, o que ajuda a explicar 23 bytes terem custado mais que 32 (20.920 contra 20.398 ciclos). Os pisos do AES-GCM no ESP32-S3 variaram até 8 ciclos entre as 100 execuções, cerca de 0,04\%, e no ESP32 clássico no máximo 2. Os do Ascon não variaram em nenhum caso.
 
-Para os pacotes pequenos típicos de redes LoRaWAN, portanto, a criptografia leve em software não apenas dispensa o acelerador de \textit{hardware} como o supera em latência nos dois chips, e por margem maior justamente na placa de implantação, mantendo ainda a ausência de alocação dinâmica, que o AES não mantém no ESP32-S3. Ressalva-se que o resultado se refere ao AES-GCM do \textit{mbedTLS} pelo \textit{port} da Espressif, nas versões indicadas. Entre os alvos do ESP-IDF, apenas o ESP32-S2 declara aceleração de GCM, e ainda assim parcial, pois o GHASH permanece em \textit{software}, de modo que não se espera que a comparação se inverta nas demais variantes \cite{espressif2026idf}. A avaliação de consumo energético dessa mesma comparação, descrita na Seção 3.4.4, complementará esta análise.
+Para os pacotes pequenos típicos de redes LoRaWAN, portanto, a criptografia leve em software não apenas dispensa o acelerador de \textit{hardware} como o supera em latência nos dois chips, e por margem maior justamente na placa de implantação, mantendo ainda a ausência de alocação dinâmica, que o AES não mantém no ESP32-S3. Ressalva-se que o resultado se refere ao AES-GCM do \textit{mbedTLS} pelo \textit{port} da Espressif, nas versões indicadas. Entre os alvos do ESP-IDF, apenas o ESP32-S2 declara aceleração de GCM, e ainda assim parcial, pois o GHASH permanece em \textit{software}, de modo que não se espera que a comparação se inverta nas demais variantes \cite{espressif2026idf}. O consumo energético dessa mesma comparação é apresentado na Seção~\ref{subsec:energia_resultados}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Consumo Energético}
+\label{subsec:energia_resultados}
+
+A energia por operação foi medida pelo procedimento da Seção~\ref{subsec:energia_metodo}, nas duas placas, com a mensagem de 23 bytes. Um \textit{firmware} próprio, que executa um autoteste antes de começar, repetiu cada operação 20.000 vezes por rajada. Os cinco casos foram a cifragem e a decifragem do Ascon-128a e do AES-128-GCM e o controle, em que o processador apenas aguarda 27~$\mu$s por repetição. O resistor foi de 1~$\Omega$, com tolerância de 1\%. A tensão na placa foi medida com multímetro no ESP32-S3, 3,2~V, e não foi medida no ESP32 clássico, para o qual se adotou 3,25~V. O \textit{firmware}, as leituras e as capturas de tela do osciloscópio estão na pasta \texttt{benchmark-validation/Ascon128a\_Energy\_Burst} do repositório.
+
+No ESP32 clássico, a média da rajada e a do repouso foram lidas na mesma captura, como previsto. No ESP32-S3, o osciloscópio calculou a média entre cursores apenas no instante da captura, e as duas médias vieram de capturas distintas, com os cursores fixados antes do disparo. Como o repouso é o mesmo estado da placa em todos os casos, adotou-se para cada placa um único valor, a média das cinco leituras de repouso, 49,0~mV no ESP32 clássico e 43,1~mV no ESP32-S3. Essas leituras variaram de 48,0 a 52,1~mV na primeira placa e de 42,0 a 46,2~mV na segunda, com desvio padrão de 1,7 e 1,8~mV. O acréscimo de corrente tem, portanto, incerteza de cerca de 2~mA, entre 7\% e 9\% do valor nos quatro casos com algoritmo. A Tabela~\ref{tab:energia_ascon128a} apresenta os resultados.
+
+\begin{table}[htb]
+\centering
+\caption{Duração da rajada de 20.000 operações, acréscimo de corrente sobre o repouso e energia por operação, com mensagem de 23 bytes, nas duas placas}
+\label{tab:energia_ascon128a}
+\begin{tabular}{lrrrrrr}
+\hline
+\textbf{Caso} & \multicolumn{3}{c}{\textbf{ESP32 clássico}} & \multicolumn{3}{c}{\textbf{ESP32-S3}} \\
+ & \textbf{s} & \textbf{mA} & \textbf{$\mu$J} & \textbf{s} & \textbf{mA} & \textbf{$\mu$J} \\
+\hline
+Controle                 & 0,55 & 12,6 & 1,1 & 0,556 & 19,8 & 1,8 \\
+Ascon-128a, cifragem     & 0,52 & 25,1 & 2,1 & 0,499 & 28,1 & 2,2 \\
+Ascon-128a, decifragem   & 0,57 & 25,6 & 2,4 & 0,520 & 27,9 & 2,3 \\
+AES-128-GCM, cifragem    & 1,02 & 22,4 & 3,7 & 1,756 & 27,9 & 7,8 \\
+AES-128-GCM, decifragem  & 1,05 & 22,5 & 3,8 & 1,786 & 25,9 & 7,4 \\
+\hline
+\end{tabular}
+\legend{Fonte: elaborado pelos autores.}
+\end{table}
+
+O Ascon-128a gastou entre 2,1 e 2,4~$\mu$J por operação, nas duas placas. O AES-128-GCM gastou 3,7 e 3,8~$\mu$J no ESP32 clássico, 1,8 e 1,6 vez a energia do Ascon na cifragem e na decifragem, e 7,8 e 7,4~$\mu$J no ESP32-S3, 3,5 e 3,2 vezes. Essas razões carregam a incerteza de cada medida.
+
+A diferença vem do tempo, e não da potência. Durante a rajada os dois algoritmos acrescentaram correntes próximas, de 22 a 28~mA, e no ESP32-S3 praticamente iguais na cifragem, 28,1 e 27,9~mA. O que muda é a duração. No ESP32-S3 cada operação do AES-128-GCM durou 87,8~$\mu$s e cada operação do Ascon-128a, 24,9~$\mu$s, a mesma razão de 3,5 vezes medida em ciclos na Tabela~\ref{tab:comparativo_aes}, cuja origem é a parcela fixa do caminho por DMA discutida na Seção~\ref{subsec:comparativo_aes}. O caso de controle mostra que manter o núcleo ocupado, sem algoritmo algum, já acrescenta 12,6~mA no ESP32 clássico e 19,8~mA no ESP32-S3. O Ascon acrescenta a isso cerca de 13~mA na primeira placa e 8~mA na segunda.
+
+As durações das rajadas foram comparadas com os pisos de ciclos das seções anteriores, multiplicados pelas 20.000 repetições. No ESP32-S3, em que a duração foi medida pelo próprio osciloscópio, as quatro ficaram a menos de 1\% do previsto, com 0,499~s contra 0,497~s na cifragem do Ascon e 1,756~s contra 1,743~s na do AES-GCM. No ESP32 clássico, em que foi lida pelos cursores com resolução de 0,03~s, as do Ascon ficaram dentro dessa margem. As do AES-GCM duraram 1,02 e 1,05~s, contra 0,87 e 0,91~s previstos. A causa dessa diferença não foi investigada, e a energia foi calculada com a duração medida.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -264,4 +299,4 @@ Dois limites ficam registrados. O provisionamento imprime a chave na porta seria
 \subsection{Limitações das Medições}
 \label{subsec:limitacoes_ascon}
 
-Os resultados desta seção valem para as condições em que foram obtidos. As placas foram o ESP32 clássico e o ESP32-S3 da Heltec, a 240~MHz, com o \textit{core} arduino-esp32 3.3.11 sobre o ESP-IDF 5.5.5 e a biblioteca \textit{ascon-suite} na versão indicada na Seção~\ref{subsec:biblioteca-ascon}. Nada aqui se generaliza para outras famílias de microcontroladores, e o próprio fabricante observa que a 240~MHz o acelerador de AES não oferece ganho sobre o AES em \textit{software} \cite{espressif2026idf}, o que faz parte do contexto da comparação. A variante medida é o Ascon-128a versão 1.2, e não o Ascon-AEAD128 do SP 800-232, cujas diferenças se limitam a constantes, como mostra a Tabela~\ref{tab:parametros_ascon}. Os \textit{payloads} foram de 0 a 64 bytes, o modelo linear de custo foi validado nessa faixa e não foi verificado para mensagens maiores. A resistência a canais laterais foi avaliada apenas quanto ao tempo de execução, consumo de potência e emissão eletromagnética ficam como trabalho futuro. O tempo no ar é calculado pela fórmula do fabricante do rádio, não medido. Por fim, a montagem do laboratório usa LoRa ponto a ponto, sem a pilha LoRaWAN, e toma do protocolo apenas os limites de \textit{payload} e a configuração do rádio, de modo que a proteção da camada MAC do LoRaWAN não faz parte do que foi medido.
+Os resultados desta seção valem para as condições em que foram obtidos. As placas foram o ESP32 clássico e o ESP32-S3 da Heltec, a 240~MHz, com o \textit{core} arduino-esp32 3.3.11 sobre o ESP-IDF 5.5.5 e a biblioteca \textit{ascon-suite} na versão indicada na Seção~\ref{subsec:biblioteca-ascon}. Nada aqui se generaliza para outras famílias de microcontroladores, e o próprio fabricante observa que a 240~MHz o acelerador de AES não oferece ganho sobre o AES em \textit{software} \cite{espressif2026idf}, o que faz parte do contexto da comparação. A variante medida é o Ascon-128a versão 1.2, e não o Ascon-AEAD128 do SP 800-232, cujas diferenças se limitam a constantes, como mostra a Tabela~\ref{tab:parametros_ascon}. Os \textit{payloads} foram de 0 a 64 bytes, o modelo linear de custo foi validado nessa faixa e não foi verificado para mensagens maiores. A resistência a canais laterais foi avaliada apenas quanto ao tempo de execução, consumo de potência e emissão eletromagnética ficam como trabalho futuro. A energia por operação foi medida apenas para a mensagem de 23 bytes, com uma captura por leitura, e não inclui o rádio. No ESP32 clássico a tensão na placa foi adotada, e não medida. O tempo no ar é calculado pela fórmula do fabricante do rádio, não medido. Por fim, a montagem do laboratório usa LoRa ponto a ponto, sem a pilha LoRaWAN, e toma do protocolo apenas os limites de \textit{payload} e a configuração do rádio, de modo que a proteção da camada MAC do LoRaWAN não faz parte do que foi medido.

@@ -35,6 +35,7 @@ Por fim, para verificar a reprodutibilidade, o procedimento é repetido em 100 e
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Avaliação de Consumo Energético}
+\label{subsec:energia_metodo}
 A avaliação restringe-se ao custo energético das operações criptográficas, não incluindo o consumo da transmissão via rádio. A medição é realizada através da técnica de monitoramento da queda de tensão em um resistor de precisão (\textit{shunt}) de 1$\Omega$ conectado em série com a alimentação de 3,3V do microcontrolador \cite{hubble2024esp32power}, conforme a Figura~\ref{fig_setup_consumo}. As capturas são feitas com um osciloscópio digital, utilizando um pino GPIO como sinal de gatilho (\textit{trigger}) para delimitar com precisão o intervalo de tempo exato da execução das funções criptográficas.
 
 Considerando que o módulo \textit{ESP32 DevKitV1} possui componentes periféricos que consomem corrente de forma constante, como o LED de operação, o regulador de tensão LDO e o conversor USB-Serial, a análise não foca no consumo absoluto da placa. Em vez disso, é aplicada a metodologia de Diferença de Consumo ($\Delta$), na qual subtrai-se a corrente de repouso (\textit{baseline}) do sistema ocioso do valor obtido durante o processamento do algoritmo.
