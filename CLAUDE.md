@@ -7,8 +7,8 @@ explícito.
 | Autor | Frente | Pasta | Seções |
 |---|---|---|---|
 | João Barea (`barea`) | infraestrutura LoRa: nó, gateway, backend, coletas | `barea/` | Cap. 2 §2.1; Cap. 3 §3.1; Cap. 4 §4.1; Cap. 5 §5.1.1, §5.1.4, §5.2; Cap. 6 parágrafos de infraestrutura |
-| Felipe Korbes (`felipe`) | criptografia leve, Ascon, biblioteca AsconSecure | `felipe/` | Cap. 2 §2.2; Cap. 3 §3.2.5 e §3.3; Cap. 4 §4.3; Cap. 5 §5.1.2, §5.3; Cap. 6 parágrafos de segurança |
-| Celso Tadaki (`tadaki`) | detecção de anomalias por aprendizado de máquina | `tadaki/` | Cap. 2 §2.3; Cap. 3 §3.2.1 a §3.2.4; Cap. 4 §4.2; Cap. 5 §5.1.3; Cap. 6 §6.1 perspectivas |
+| Felipe Korbes (`felipe`) | criptografia leve, Ascon, biblioteca AsconSecure | `felipe/` | Cap. 2 §2.2; Cap. 3 §3.2.5 e §3.3; Cap. 4 §4.2; Cap. 5 §5.1.2, §5.3; Cap. 6 parágrafos de segurança |
+| Celso Tadaki (`tadaki`) | detecção de anomalias por aprendizado de máquina | `tadaki/` | Cap. 2 §2.3; Cap. 3 §3.2.1 a §3.2.4; Cap. 4 §4.3; Cap. 5 §5.1.3; Cap. 6 §6.1 perspectivas |
 | Grupo | | `main.tex`, `capitulos/` | Cap. 1 inteiro; esqueletos dos capítulos (título, parágrafos de abertura, `\input`); Cap. 6 parágrafos 1 e 2; `refs-comuns.bib` |
 
 Cada capítulo em `capitulos/` é um esqueleto que faz `\input` dos fragmentos
