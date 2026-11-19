@@ -12,11 +12,15 @@ bibliografia que só esta frente cita.
 | `cap5-implementacao-infra.tex` | Cap. 5, §5.1.1 Implementação da infraestrutura |
 | `cap5-integracao.tex` | Cap. 5, §5.1.4 Integração progressiva |
 | `cap5-resultados-infra.tex` | Cap. 5, §5.2 Resultados da infraestrutura |
+| `cap6-conclusoes-infra.tex` | Cap. 6, conclusões da infraestrutura, antes das de segurança |
+| `cap6-perspectivas-infra.tex` | Cap. 6, §6.1, entre as perspectivas de detecção e as de segurança |
 | `refs.bib` | entradas citadas só aqui |
 | `figuras/` | figuras destas seções |
 
-Parágrafos de infraestrutura do Cap. 1 e do Cap. 6 ficam nos arquivos do
-grupo em `capitulos/`; avisar os outros antes de mexer.
+Parágrafos de infraestrutura do Cap. 1 ficam no arquivo do grupo em
+`capitulos/`; avisar os outros antes de mexer. O método da infraestrutura
+(bancada, métricas e os sete marcos) está em §3.1.3, no fim de
+`cap3-arquitetura.tex`.
 
 ## Fontes dos fatos e números
 
