@@ -32,7 +32,7 @@ Para o uso seguro da cifra, este trabalho adota os requisitos operacionais espec
 \begin{enumerate}
     \item[RNF-S1.] A entropia bruta extraída diretamente do \textit{hardware} não deve ser utilizada sem tratamento adicional, uma vez que pode conter vícios físicos (\textit{bias}), tornando indispensável um estágio secundário de condicionamento algorítmico \cite{turan2018nist90b}.
 
-    \item[RNF-S2.] A chave criptográfica deve ser mantida em sigilo absoluto e não deve ser empregada para outras finalidades, aliada à garantia de unicidade do \textit{nonce} para cada operação de cifragem \cite{nist800232}.
+    \item[RNF-S2.] A chave criptográfica deve ser mantida em sigilo e não deve ser empregada para outras finalidades, aliada à garantia de unicidade do \textit{nonce} para cada operação de cifragem \cite{nist800232}.
 
     \item[RNF-S3.] Para \textit{tags} de autenticação cujo tamanho $\lambda$ (em bits) satisfaça a condição $64 \leq \lambda \leq 128$, a quantidade de falhas de decifragem não deve exceder $2^{\lambda - 32}$.
 
@@ -52,7 +52,7 @@ Para o uso seguro da cifra, este trabalho adota os requisitos operacionais espec
 Diante desses requisitos, alguns deles possuem impacto prático reduzido no contexto deste projeto. Como as redes LoRaWAN operam com taxas de transmissão extremamente baixas e pacotes pequenos, atingir o limite de $2^{54}$ bytes processados sob uma mesma chave é inviável durante a vida útil física do dispositivo. Da mesma forma, considerando o uso de uma \textit{tag} de 128 bits, o limite tolerado antes da obrigatoriedade de rotação da chave é de $2^{96}$ falhas de decifragem. Alcançar esse volume de tentativas de ataques de injeção na rede é improvável, dadas as severas restrições de tempo de transmissão inerentes ao protocolo.
 
 \subsubsection{Rastreabilidade}
-O Quadro~\ref{qua:rastreabilidade_ascon} relaciona cada requisito à seção do Capítulo~\ref{cap:desenvolvimento} que o verifica e à forma de verificação. Os requisitos RNF-S3 e RNF-S4 não têm verificação experimental, porque seus limites são inalcançáveis na operação prevista, como discutido acima. A biblioteca encerra o uso da chave ao fim do contador de 32 bits, o que corresponde a menos de $2^{40}$ bytes processados com mensagens de até 220 bytes, o tamanho máximo na configuração padrão da biblioteca, muito antes do limite de $2^{54}$.
+O Quadro~\ref{qua:rastreabilidade_ascon} relaciona cada requisito à seção do Capítulo~\ref{cap:desenvolvimento} que o verifica e à forma de verificação. Os requisitos RNF-S3 e RNF-S4 não têm verificação experimental, porque seus limites são inalcançáveis na operação prevista, como discutido acima. Os requisitos atendidos pela biblioteca \textit{AsconSecure}, do RF-S2 ao RF-S7, o RF-S9, o RNF-S1, o RNF-S2 e o RNF-S5, foram verificados por inspeção do código, e os demais por ensaio. A biblioteca encerra o uso da chave ao fim do contador de 32 bits, o que corresponde a menos de $2^{40}$ bytes processados com mensagens de até 220 bytes, o tamanho máximo na configuração padrão da biblioteca, muito antes do limite de $2^{54}$.
 
 \begin{quadro}[htb]
 \centering
@@ -68,10 +68,10 @@ RF-S2 a RF-S4 & Seção~\ref{subsec:asconsecure} & Chave gerada no nó pelo CTR\
 RF-S5 & Seção~\ref{subsec:asconsecure} & Renovação por descarte do estado e novo provisionamento, sem chave no ar \\
 RF-S6 & Seção~\ref{subsec:asconsecure} & Uma chave por nó, e o receptor guarda uma por nó registrado \\
 RF-S7 & Seção~\ref{subsec:asconsecure} & Contador na memória não volátil (NVS) reservado em blocos de 32 antes do uso, independente do contador de quadros \\
-RF-S8 & Seções~\ref{subsec:aead_resultados} e \ref{subsec:asconsecure} & 4.907 adulterações rejeitadas nas duas placas, nenhum byte de texto claro entregue \\
+RF-S8 & Seções~\ref{subsec:aead_resultados} e \ref{subsec:asconsecure} & 4.907 adulterações rejeitadas em cada uma das duas placas, nenhum byte de texto claro entregue \\
 RF-S9 & Seção~\ref{subsec:asconsecure} & Receptor descarta contador igual ou menor que o último aceito, gravado antes da entrega \\
 RNF-S1 & Seção~\ref{subsec:asconsecure} & Entropia bruta condicionada pelo CTR\_DRBG \\
-RNF-S2 & Seção~\ref{subsec:asconsecure} & Chave na NVS do nó, apagada da RAM ao ser descartada, e \textit{nonce} único pelo contador \\
+RNF-S2 & Seção~\ref{subsec:asconsecure} & Chave na NVS do nó, em claro, apagada da RAM ao ser descartada, e \textit{nonce} único pelo contador. O sigilo depende do controle físico do dispositivo \\
 RNF-S3, RNF-S4 & esta seção & Limites inalcançáveis na operação, sem verificação experimental \\
 RNF-S5 & Seção~\ref{subsec:asconsecure} & \textit{Tag} de 128 bits, sem truncamento \\
 RNF-S6 & Seção~\ref{subsec:memoria_tempo} & \textit{Heap} livre lido continuamente durante a operação, nenhuma alocação nas duas placas \\
