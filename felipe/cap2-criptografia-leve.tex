@@ -3,7 +3,7 @@ Em dispositivos IoT, onde o baixo consumo de energia é um requisito essencial p
 
 O Instituto Nacional de Padrões e Tecnologia dos Estados Unidos (NIST), responsável pela padronização do \textit{Advanced Encryption Standard} (AES), conduziu também a padronização da criptografia leve (\textit{Lightweight Cryptography}) \cite{chen2022cornerstone}.
 
-Com o crescimento expressivo do uso de dispositivos IoT, a necessidade de estabelecer um padrão robusto de criptografia leve tornou-se urgente. Isso impulsionou o desenvolvimento de uma nova padronização internacional com o objetivo de contemplar as primitivas criptográficas e os modos de operação adequados para ambientes restritos. Os critérios exigidos para esse novo padrão incluíam resiliência de segurança, flexibilidade de implementação, baixa sobrecarga ao integrar múltiplas funções e facilidade de proteção contra ataques de canal lateral (\textit{Side-Channel Attacks}), entre outros requisitos técnicos \cite{nistir8114}.
+Com o crescimento expressivo do uso de dispositivos IoT, a necessidade de estabelecer um padrão robusto de criptografia leve tornou-se urgente. Isso impulsionou o desenvolvimento de uma nova padronização internacional com o objetivo de contemplar as primitivas criptográficas e os modos de operação adequados para ambientes restritos. As propriedades desejadas para esse novo padrão incluíam resiliência de segurança, flexibilidade de implementação, baixa sobrecarga ao integrar múltiplas funções e facilidade de proteção contra ataques de canal lateral (\textit{Side-Channel Attacks}), entre outras \cite{nistir8114}.
 
 O processo de padronização promovido pelo NIST ocorreu ao longo de múltiplas fases de testes e escrutínio público. Inicialmente, 57 algoritmos foram submetidos para consideração. Desses, 32 avançaram para a segunda rodada e, após rigorosas avaliações de desempenho e segurança, apenas 10 chegaram à fase final. A culminação desse extenso projeto ocorreu, em 2023, com o anúncio da família Ascon como a grande vencedora \cite{nistir8454}.
 
@@ -45,7 +45,7 @@ Rodadas no processamento de dados & 8 & 8 \\
   \begin{center}
     \includegraphics[scale=0.25]{felipe/figuras/fluxo-ascon-aead128-encript.png}
   \end{center}
-  \legend{Fonte: \cite{nist2025ascon}}
+  \legend{Fonte: \cite{nist800232}}
 \end{figure}
 
 O processo de decifragem (Figura~\ref{fig:fluxo_ascon_decript}) tem a mesma inicialização do estado e o mesmo processamento dos dados associados. O texto cifrado é processado bloco a bloco para recuperar o texto original e, na fase de finalização, a \textit{tag} de autenticação é recalculada e comparada com a recebida.
@@ -55,7 +55,7 @@ O processo de decifragem (Figura~\ref{fig:fluxo_ascon_decript}) tem a mesma inic
   \begin{center}
     \includegraphics[scale=0.35]{felipe/figuras/fluxo-ascon-aead128-decript.png}
   \end{center}
-  \legend{Fonte: \cite{nist2025ascon}}
+  \legend{Fonte: \cite{nist800232}}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,7 +64,7 @@ O processo de decifragem (Figura~\ref{fig:fluxo_ascon_decript}) tem a mesma inic
 \label{subsec:comparativo_algoritmos}
 Durante a pesquisa inicial sobre criptografia leve, outros algoritmos foram avaliados, mas nenhum se mostrou tão adequado às necessidades do projeto quanto o padrão Ascon. Entre as principais alternativas analisadas, destacam-se o Speck \cite{beaulieu2013speck} e o ChaCha20 \cite{bernstein2008chacha}.
 
-O Speck é uma cifra de bloco pura e bastante leve. No entanto, ele possui uma limitação estrutural importante para redes modernas, pois não oferece Criptografia Autenticada com Dados Associados (\textit{AEAD}) de forma nativa. Para garantir a integridade da mensagem, seria necessária a adição de um algoritmo de autenticação secundário e independente (como um código de autenticação de mensagem, MAC). O Speck teve sua padronização internacional ativamente rejeitada pela ISO (\textit{International Organization for Standardization}) por falta de transparência em seu design \cite{register2018nsa}.
+O Speck é uma cifra de bloco pura e bastante leve. No entanto, ele possui uma limitação estrutural importante para redes modernas, pois não oferece Criptografia Autenticada com Dados Associados (\textit{AEAD}) de forma nativa. Para garantir a integridade da mensagem, seria necessária a adição de um algoritmo de autenticação secundário e independente (como um código de autenticação de mensagem, MAC). O Speck teve sua padronização internacional rejeitada pela ISO (\textit{International Organization for Standardization}), em meio a suspeitas de que contivesse uma porta dos fundos \cite{register2018nsa}.
 
 O ChaCha20, por sua vez, é uma cifra de fluxo de alto desempenho, mais rápida que o AES em plataformas onde não há aceleração de \textit{hardware} disponível \cite{nir2018rfc8439}. Combinado ao autenticador Poly1305, forma o ChaCha20-Poly1305, um AEAD especificado para os protocolos da \textit{Internet Engineering Task Force} \cite{nir2018rfc8439}. Ele não entrou na comparação porque as placas deste trabalho dispõem de acelerador de AES, de modo que o padrão a ser superado nelas é o AES, e porque o algoritmo não faz parte da padronização de criptografia leve do NIST \cite{nistir8454}.
 
