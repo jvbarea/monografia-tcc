@@ -13,6 +13,7 @@ bibliografia que só esta frente cita.
 | `cap5-integracao.tex` | Cap. 5, §5.1.4 Integração progressiva |
 | `cap5-resultados-infra.tex` | Cap. 5, §5.2 Resultados da infraestrutura |
 | `cap6-conclusoes-infra.tex` | Cap. 6, conclusões da infraestrutura, antes das de segurança |
+| `cap6-contribuicoes-infra.tex` | Cap. 6, contribuições da infraestrutura, antes das de segurança |
 | `cap6-perspectivas-infra.tex` | Cap. 6, §6.1, entre as perspectivas de detecção e as de segurança |
 | `refs.bib` | entradas citadas só aqui |
 | `figuras/` | figuras destas seções |
