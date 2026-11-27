@@ -1,7 +1,7 @@
 \section{Requisitos de Segurança do Sistema criptográfico}
 \label{sec:requisitos_seguranca}
 \subsection{Segurança do Ascon-AEAD128 e da variante Ascon-128a}
-A camada criptográfica especificada nesta seção é adicional à proteção já oferecida pelo protocolo de comunicação. A especificação do LoRaWAN determina que o \textit{payload} de aplicação seja cifrado fim a fim entre o dispositivo e o \textit{Application Server}, mas registra que a proteção de integridade não é fim a fim. O \textit{Network Server} pode alterar o conteúdo cifrado em trânsito, ainda que sem conseguir lê-lo, uma vez que detém a chave empregada no cálculo do código de integridade das mensagens. Por esse motivo, a própria norma recomenda que aplicações que exijam confidencialidade e integridade fim a fim empreguem soluções de segurança adicionais \cite{lorawan104}. É essa lacuna de integridade que a camada baseada em Ascon preenche neste trabalho.
+A camada criptográfica especificada nesta seção é adicional à proteção já oferecida pelo protocolo de comunicação. A especificação LoRaWAN~1.0.4 determina que o \textit{payload} de aplicação seja cifrado fim a fim entre o dispositivo e o \textit{Application Server}, mas registra que a proteção de integridade não é fim a fim. O \textit{Network Server} pode alterar o conteúdo cifrado em trânsito, ainda que sem conseguir lê-lo. Por esse motivo, a própria norma recomenda que aplicações que exijam confidencialidade e integridade fim a fim empreguem soluções de segurança adicionais \cite{lorawan104}. É essa lacuna de integridade que motiva a camada baseada em Ascon. Neste trabalho o receptor decifra no \textit{gateway} e a avaliação foi feita fora de uma rede LoRaWAN completa, de modo que a lacuna é a motivação do desenho, e não um resultado medido.
 
 Para o uso seguro da cifra, este trabalho adota os requisitos operacionais especificados pelo NIST para o Ascon-AEAD128 \cite{nist800232}. Embora a implementação utilizada corresponda à variante Ascon-128a (versão 1.2), esses requisitos são adotados de forma conservadora como limites aplicáveis, uma vez que as duas versões compartilham os parâmetros da Tabela~\ref{tab:parametros_ascon}. A geração da chave segue o SP 800-133r2 \cite{barker2020nist133} e emprega o mecanismo CTR\_DRBG especificado no SP 800-90A \cite{barker2015nist90a}. A aprovação refere-se ao mecanismo, e este trabalho não avaliou a conformidade da implementação utilizada. Os requisitos estão organizados em funcionais e não funcionais.
 
@@ -30,7 +30,7 @@ Para o uso seguro da cifra, este trabalho adota os requisitos operacionais espec
 \subsubsection{Requisitos não funcionais}
 
 \begin{enumerate}
-    \item[RNF-S1.] A entropia bruta extraída diretamente do \textit{hardware} não deve ser utilizada sem tratamento adicional, uma vez que pode conter vícios físicos (\textit{bias}), tornando indispensável um estágio secundário de condicionamento algorítmico \cite{turan2018nist90b}.
+    \item[RNF-S1.] A entropia bruta extraída diretamente do \textit{hardware} não deve ser utilizada sem tratamento adicional, uma vez que pode conter vícios físicos (\textit{bias}), que um estágio secundário de condicionamento algorítmico se destina a reduzir \cite{turan2018nist90b}.
 
     \item[RNF-S2.] A chave criptográfica deve ser mantida em sigilo e não deve ser empregada para outras finalidades, aliada à garantia de unicidade do \textit{nonce} para cada operação de cifragem \cite{nist800232}.
 
@@ -42,7 +42,7 @@ Para o uso seguro da cifra, este trabalho adota os requisitos operacionais espec
 
     \item[RNF-S6.] A operação de cifragem não deve realizar alocação dinâmica de memória, de modo a evitar fragmentação de \textit{heap} em dispositivos que operam por longos períodos sem reinicialização.
 
-    \item[RNF-S7.] O consumo de memória da operação de cifragem deve ser constante e independente do tamanho do \textit{payload}, restringindo-se ao estado interno do algoritmo.
+    \item[RNF-S7.] O consumo de memória da operação de cifragem deve ser constante e independente do tamanho do \textit{payload}.
 
     \item[RNF-S8.] A latência de cifragem deve ser desprezível frente ao tempo de transmissão da mensagem correspondente, de modo que a camada criptográfica não se torne fator limitante do ciclo de operação do nó.
 
@@ -75,7 +75,7 @@ RNF-S2 & Seção~\ref{subsec:asconsecure} & Chave na NVS do nó, em claro, apaga
 RNF-S3, RNF-S4 & esta seção & Limites inalcançáveis na operação, sem verificação experimental \\
 RNF-S5 & Seção~\ref{subsec:asconsecure} & \textit{Tag} de 128 bits, sem truncamento \\
 RNF-S6 & Seção~\ref{subsec:memoria_tempo} & \textit{Heap} livre lido continuamente durante a operação, nenhuma alocação nas duas placas \\
-RNF-S7 & Seção~\ref{subsec:memoria_tempo} & \textit{Buffers} fixos, estado de 80 bytes, pilha de até 436 bytes \\
+RNF-S7 & Seção~\ref{subsec:memoria_tempo} & \textit{Buffers} fixos, estado de 80 bytes, pilha de 340 e 224 bytes na cifragem de 64 bytes \\
 RNF-S8 & Seção~\ref{subsec:memoria_tempo} & 27~$\mu$s de cifragem contra cerca de 87~ms de tempo no ar \\
 RNF-S9 & Seção~\ref{subsec:memoria_tempo} & Piso idêntico em cinco classes de entrada, nas duas placas \\
 \hline
