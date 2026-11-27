@@ -1,425 +1,202 @@
-\subsection{Materiais e Bases de Dados}
+\subsection{Materiais e bases de dados}
+\label{subsec:ml-dataset}
 
-Para viabilizar a etapa de modelagem, foi realizada uma pesquisa orientada 
-à identificação de \textit{datasets} abertos, confiáveis e suficientemente 
-completos para sustentar análises, treinamento de modelos e comparação de 
-resultados. A seleção dos conjuntos de dados foi guiada por três critérios 
-principais: aderência ao contexto de LoRaWAN, disponibilidade de atributos 
-úteis para engenharia de \textit{features} e complementaridade entre cenários 
-de operação normal e cenários com potencial presença de anomalias ou ataques.
+Esta parte do método trata do modelo de detecção. Ela parte do RSSI, o
+metadado de recepção definido na Seção~\ref{subsec:camada_fisica_lora}, e
+entrega o detector que o \textit{gateway} da Seção~\ref{sec:requisitos_infra}
+executa, descrito na Seção~\ref{subsec:ml-protocolo-borda}. O modelo é estimado
+com o \textit{dataset} Tour Perret,
+publicado pelo CampusIoT da Université Grenoble Alpes \cite{tourperret_dataset}.
+Ele reúne os eventos de cinco nós sensores instalados na Tour Perret, em
+Grenoble, recebidos de 25/06/2021 a 23/06/2023 por um servidor de rede
+ChirpStack v3, num total de 421.937 mensagens. O arquivo usado é o oficial,
+conferido pelo resumo SHA-256 publicado com ele. Cada evento de
+\textit{uplink} traz uma lista com uma entrada por \textit{gateway} que recebeu
+o quadro, com o RSSI medido naquele \textit{gateway} \cite{brocaarintegration}.
 
-A seleção de \textit{datasets} públicos é uma escolha orientada 
-por cronograma e recursos do projeto. Pois Datasets públicos permitem focar tempo no desenvolvimento de modelos e validação 
-metodológica, em vez de depender da  infraestrutura de captura. Além disso, dados 
-coletados em operação real (não simulados) e já diversificados em ambiente 
-real permitem comparação com outros trabalhos em literatura realizados. Por estas 
-razões, foram identificados dois \textit{datasets} complementares nas 
-subseções seguintes e que serão utilizados no trabalho.
+O \textit{dataset} vem de sensores em operação real e não tem rótulos de ataque.
+Por isso ele serve para aprender o comportamento esperado do RSSI, e a
+capacidade de detecção é medida com desvios sintéticos, como descrito na
+Seção~\ref{subsec:ml-protocolo-deteccao}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsubsection{Dataset Tour Perret — base principal de modelagem}
-
-O \textit{dataset} principal adotado neste trabalho é o \textit{Tour Perret 
-LoRaWAN Frames Dataset}, pertencente ao ecossistema CampusIoT. O repositório 
-oficial lista o conjunto com 421.937 entradas de \textit{frames} LoRaWAN, 
-coletadas a partir de dispositivos instalados na Tour Perret, em Grenoble, 
-França. A plataforma CampusIoT se apresenta como uma infraestrutura de ensino 
-e pesquisa voltada à experimentação \textit{in-vivo}, apoiada por uma rede 
-LoRaWAN privada operando nas metrópoles de Grenoble e Valence 
-\cite{campusiot_platform, tourperret_dataset}.
-
-A principal característica que justifica a escolha desse \textit{dataset} 
-como base principal é sua natureza de operação real e contínua. Os dados 
-foram produzidos por sensores em funcionamento efetivo, ao longo de um 
-período extenso, sem intervenção artificial no tráfego. Essa característica 
-implica diretamente na ausência de rótulos de ataque, o que, longe de ser 
-uma limitação, define com precisão a abordagem metodológica adequada para 
-este trabalho: a modelagem do comportamento normal da rede, a partir da qual 
-desvios podem ser identificados como potencialmente anômalos. Em outras 
-palavras, o Tour Perret é ideal para o treinamento de modelos de regressão 
-temporal voltados à detecção de anomalias não supervisionada, justamente 
-porque representa com fidelidade as condições que um sistema de monitoramento 
-real encontraria em campo.
-
-Além disso, o volume de entradas do \textit{dataset} é suficiente para 
-sustentar as etapas de treinamento, validação e teste com divisão temporal, 
-sem comprometer a representatividade de cada partição. A diversidade de 
-dispositivos e a continuidade temporal das observações também favorecem a 
-construção de um modelo robusto ao comportamento variado de diferentes nós 
-da rede.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsubsection{Análise Exploratória do Dataset Tour Perret}
-
-O \textit{dataset} Tour Perret foi submetido a uma análise exploratória 
-preliminar com o objetivo de caracterizar sua estrutura, verificar a 
-qualidade dos dados disponíveis e identificar os atributos mais relevantes 
-para a etapa de modelagem. Essa análise constitui parte integrante do método 
-adotado, fornecendo evidências concretas que embasam as decisões de seleção 
-de variáveis descritas na Seção~\ref{sec:selecao_variaveis}.
-
-O conjunto de dados é composto por 421.937 entradas de \textit{frames} 
-LoRaWAN, distribuídas entre três cenários identificados pelo campo 
-\texttt{applicationName}: o cenário \texttt{ELSYS\_EMS}, predominante com 
-412.380 registros (97,7\% do total), o cenário \texttt{WYRES\_BASE}, com 
-9.526 registros, e um terceiro identificador com 31 entradas. Essa 
-concentração em um único cenário de aplicação é metodologicamente favorável, 
-pois permite que a modelagem do comportamento normal seja construída sobre 
-uma base homogênea, reduzindo a influência de padrões heterogêneos entre 
-aplicações distintas.
-
-A verificação de cobertura dos campos revelou alta qualidade dos dados para 
-todos os atributos relevantes ao projeto, conforme apresentado na 
-Tabela~\ref{tab:cobertura_tourperret}. Os campos \texttt{timestamp}, 
-\texttt{devEUI} e \texttt{rxInfo} apresentaram preenchimento de 100\%, 
-enquanto \texttt{fCnt}, \texttt{fPort} e \texttt{\_redundancy} atingiram 
-99,99\%, e o campo \texttt{object}, que contém o \textit{payload} 
-decodificado, registrou 99,98\% de preenchimento. Essa consistência indica 
-que o \textit{dataset} é adequado para o treinamento de modelos de regressão 
-temporal sem necessidade de estratégias complexas de imputação de dados 
-ausentes.
-
-\begin{table}[htb]
-\centering
-\caption{Cobertura dos campos relevantes no dataset Tour Perret}
-\label{tab:cobertura_tourperret}
-\begin{tabular}{lll}
-\hline
-\textbf{Atributo} & \textbf{Campo original} & \textbf{Preenchimento (\%)} \\
-\hline
-timestamp    & \texttt{\_timestamp}  & 100,00 \\
-device\_id   & \texttt{devEUI}       & 100,00 \\
-gateway\_info & \texttt{rxInfo}      & 100,00 \\
-fCnt         & \texttt{fCnt}         & 99,99  \\
-freq\_dr     & \texttt{txInfo}       & 100,00 \\
-fPort        & \texttt{fPort}        & 99,99  \\
-payload      & \texttt{object}       & 99,98  \\
-redundância  & \texttt{\_redundancy} & 99,99  \\
-\hline
-\end{tabular}
-\legend{Fonte: elaborado pelos autores.}
-\end{table}
-
-A análise de diversidade identificou 5 dispositivos únicos no subconjunto 
-analisado, com distribuição heterogênea de volume de mensagens entre eles. 
-A variabilidade de RSSI por dispositivo foi calculada e revelou perfis 
-distintos de enlace para cada nó da rede, conforme apresentado na 
-Tabela~\ref{tab:rssi_dispositivos}. O dispositivo \texttt{42fb8334...} 
-apresentou o maior desvio padrão de RSSI (11,30 dBm), indicando condições 
-de enlace mais instáveis, enquanto o dispositivo \texttt{73d89239...} exibiu 
-o menor desvio (5,83 dBm), sugerindo um enlace mais estável ao longo do 
-tempo. As médias de RSSI variaram entre $-$97,38 dBm e $-$107,76 dBm entre 
-os dispositivos, confirmando que o perfil de sinal é característico de cada 
-nó e potencialmente utilizável como base para a modelagem de comportamento 
-esperado individualizado.
-
-\begin{table}[htb]
-\centering
-\caption{Variabilidade de RSSI por dispositivo no dataset Tour Perret}
-\label{tab:rssi_dispositivos}
-\begin{tabular}{lrrrr}
-\hline
-\textbf{devEUI (parcial)} & \textbf{Média (dBm)} & \textbf{Desvio padrão} & 
-\textbf{Mín} & \textbf{Máx} \\
-\hline
-2951cd7c... & $-$106,43 & 6,76  & $-$127 & $-$59 \\
-42fb8334... & $-$97,38  & 11,30 & $-$122 & $-$74 \\
-441a1ed9... & $-$103,45 & 9,01  & $-$127 & $-$76 \\
-73d89239... & $-$107,76 & 5,83  & $-$126 & $-$68 \\
-73fe90c2... & $-$103,64 & 10,02 & $-$130 & $-$55 \\
-\hline
-\end{tabular}
-\legend{Fonte: elaborado pelos autores.}
-\end{table}
-
-As \textit{features} numéricas RSSI, SNR, frequência de operação e 
-\textit{data rate} foram extraídas com sucesso das estruturas aninhadas dos 
-campos \texttt{rxInfo} e \texttt{txInfo}, confirmando a viabilidade de 
-utilização desses atributos nos modelos de regressão. O fato de que essas 
-variáveis estão disponíveis de forma consistente em praticamente todas as 
-entradas do \textit{dataset} reforça sua adequação como candidatas principais 
-à seleção final de variáveis, discutida na 
-Seção~\ref{sec:selecao_variaveis}.
-
-Em conjunto, os resultados da análise exploratória confirmam que o 
-\textit{dataset} Tour Perret apresenta qualidade, volume e riqueza de 
-atributos suficientes para sustentar a etapa de modelagem proposta neste 
-trabalho, tanto em termos de dados de treinamento quanto de variáveis 
-candidatas para a construção dos modelos de regressão temporal.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsubsection{Dataset GUARD — papel complementar e de referência}
-
-O segundo \textit{dataset} considerado neste trabalho é o 
-\textit{LoRaWAN Network Attacks}, associado ao projeto GUARD. De acordo com 
-sua descrição oficial, esse conjunto contém um \textit{dump} de mensagens 
-observadas em uma rede LoRaWAN durante a validação do projeto, incluindo 
-tráfego legítimo proveniente de dispositivos reais instalados em ônibus 
-urbanos, além de ataques artificialmente gerados por replicação ou alteração 
-de mensagens \cite{guard_dataset}.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\paragraph{Caracterização dos Ataques em GUARD}
-
-Uma análise exploratória do \textit{dataset} GUARD foi conduzida para 
-caracterizar a natureza dos ataques contidos. Embora o \textit{dataset} 
-não forneça rótulos explícitos (coluna binária de ataque/normal), contém 
-indicadores comportamentais estruturados que permitem identificação 
-confiável de eventos anômalos.
-
-A análise focou nas colunas \texttt{type} e \texttt{error}, que registram 
-eventos durante processamento de mensagens LoRaWAN. Foram identificados dois 
-indicadores principais:
-
-\begin{enumerate}
-    \item \textbf{UPLINK\_FCNT\_RETRANSMISSION}: Frame counter não incrementou 
-    sequencialmente, indicando retransmissão de mensagem anterior (ataque de 
-    replicação).
-    
-    \item \textbf{UPLINK\_FCNT\_RESET}: Frame counter sofreu reset inesperado, 
-    indicando contador adulterado ou dispositivo comprometido (ataque de 
-    spoofing).
-\end{enumerate}
-
-A filtragem sistemática identificou \textbf{6.799 registros} com um ou mais 
-destes indicadores, representando eventos anômalos confirmados. Esta 
-quantidade significativa fornece volume adequado para validação de capacidade 
-de detecção.
-
-%%%%%%%%%%%%%%%%%%%%%%%
-
-\paragraph{Estratégias de Validação com GUARD}
-
-Diferentemente do Tour Perret, o \textit{dataset} GUARD contém indicadores 
-de ataque explicitamente identificáveis através de suas colunas 
-\texttt{type} e \texttt{error}. No contexto deste trabalho, contudo, ele 
-exerce um papel complementar e não central, sendo utilizado em duas 
-estratégias de validação distintas.
-
-\subparagraph{Estratégia 1: Teste de Generalização}
-
-Após treinar o modelo com Tour Perret (aprendendo padrões de comportamento 
-normal), aplicar este modelo aos dados de GUARD para verificar se consegue 
-identificar desvios associados a ataques conhecidos. Esta abordagem responde 
-à questão: \textit{``O modelo consegue detectar anomalias mesmo quando 
-confrontado com contexto diferente daquele em que foi treinado?''}
-
-Importa notar que esta validação possui uma limitação intrínseca: Tour 
-Perret (sensores em Grenoble) e GUARD (ônibus urbanos) representam 
-contextos distintos. Portanto, quando o modelo detecta desvios em GUARD, 
-isto pode resultar tanto de (i) identificação de ataque quanto de 
-(ii) mudança de contexto ambiental. Assim, esta abordagem valida 
-\textit{sensibilidade} do modelo a anomalias, mas não isoladamente a 
-capacidade de distinguir ataques de mudanças contextuais.
-
-\subparagraph{Estratégia 2: Validação Supervisionada (Se Viável)}
-
-Se análise mais profunda de GUARD indicar viabilidade, uma segunda 
-estratégia envolve treinar um classificador supervisionado (Normal vs 
-Ataque) exclusivamente dentro de GUARD, usando os 6.799 registros anômalos 
-como ``ataque'' e registros restantes como ``normal''. Validação cruzada 
-dentro de GUARD forneceria comparação direta com a abordagem não 
-supervisionada de Tour Perret.
-
-Esta estratégia enfrenta dois desafios práticos reconhecidos:
-
-\begin{enumerate}
-    \item \textbf{Engenharia de features}: Campos estruturados de GUARD 
-    (\texttt{time}, \texttt{tx\_info}, \texttt{rx\_info}, \texttt{data}) 
-    requerem transformação significativa em features numéricas compatíveis 
-    com modelos de aprendizado de máquina, consumindo tempo de 
-    desenvolvimento.
-    
-    \item \textbf{Desbalanceamento de classes}: O \textit{dataset} GUARD 
-    possui proporção desigual entre registros normais e registros de ataque. 
-    Treinar modelos supervisionados com desbalanceamento severo introduz 
-    viés. Técnicas de balanceamento (oversampling, undersampling, pesos de 
-    classe) seriam necessárias.
-\end{enumerate}
-
-Por estas razões, a abordagem supervisionada é considerada secundária e 
-explorada apenas se cronograma permitir. Do contrário, será considerada uma perspectiva de continuidade, como futuros passos.
-
-\subparagraph{Objetivos Distintos, Insights Complementares}
-
-As duas estratégias respondem a questões metodologicamente diferentes:
-
-\begin{enumerate}
-    \item \textbf{Tour Perret (Não Supervisionado)}: ``O modelo consegue 
-    aprender padrões normais e detectar desvios significativos?'' Fornece 
-    validação da abordagem de regressão temporal em dados reais de operação 
-    normal.
-    
-    \item \textbf{GUARD - Generalização}: ``O modelo generaliza para novo 
-    contexto?'' Fornece indicação de robustez do modelo a variações ambientais.
-    
-    \item \textbf{GUARD - Supervisionado} (se viável): ``O modelo consegue 
-    classificar quando dispõe de rótulos explícitos?'' Fornece comparação 
-    com baseline supervisionado.
-\end{enumerate}
-
-A combinação destas estratégias enriquece a análise sem exigir que o modelo 
-principal seja treinado exclusivamente com dados rotulados, mantendo o 
-cronograma viável.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Seleção de Variáveis}
+\subsection{Limpeza e recorte da série}
+\label{subsec:ml-limpeza}
+% sec:selecao_variaveis: rótulo citado pelas Seções 2.1 e 3.1 (barea); aqui se define que o modelo usa só o RSSI.
 \label{sec:selecao_variaveis}
 
-A definição das variáveis de entrada dos modelos de regressão é uma etapa 
-metodológica central neste trabalho, pois determina diretamente quais 
-aspectos do comportamento da rede serão modelados e, consequentemente, quais 
-tipos de anomalia o sistema será capaz de detectar. A seleção foi conduzida 
-a partir de dois critérios principais: relevância para a caracterização do 
-comportamento temporal da rede LoRaWAN e disponibilidade consistente nos 
-\textit{datasets} selecionados.
+A limpeza segue regras numeradas, cada uma com a contagem de linhas depois de
+aplicada, como mostram a Tabela~\ref{tab:ml-limpeza} e a
+Figura~\ref{fig:ml-funil}. Os dados ficam em duas tabelas, uma de quadros e
+outra de recepções, segundo o princípio de uma linha por observação
+\cite{wickham2014tidy}. As regras têm quatro papéis diferentes. L1 e L4 removem
+registros que não são medidas novas. L2 e L3 só organizam os dados. L6 e L8 não
+removem dados inválidos. Elas fazem o recorte do estudo, escolhendo um nó
+sensor e um trecho contínuo. L7 e L9 apenas marcam quadros, sem remover nada, e
+L5 registra a decisão de não filtrar o RSSI.
 
-O \textit{dataset} Tour Perret disponibiliza um conjunto de atributos 
-associados a cada \textit{frame} recebido, entre os quais se destacam como 
-candidatos naturais à modelagem temporal as seguintes variáveis: a 
-intensidade do sinal recebido (RSSI), a relação sinal-ruído (SNR), o 
-contador de \textit{frames} (FCnt), o intervalo de tempo entre mensagens 
-consecutivas de um mesmo dispositivo (\textit{inter-arrival time}) e a taxa 
-de dados utilizada na transmissão (\textit{data rate}). Cada uma dessas 
-variáveis apresenta propriedades distintas do ponto de vista da detecção de 
-anomalias.
+\begin{table}[htb]
+	\centering
+	\caption{Regras de limpeza e recorte da série de RSSI}
+	\label{tab:ml-limpeza}
+	\begin{tabular}{llr}
+		\hline
+		\textbf{Regra} & \textbf{O que faz} & \textbf{Linhas depois} \\
+		\hline
+		L1 & Mantém só eventos de \textit{uplink} & 421.906 \\
+		L2 & Usa o instante de arquivamento como eixo de tempo & 421.906 \\
+		L3 & Separa quadros e recepções (recepções) & 3.559.119 \\
+		L4 & Remove retransmissões (quadros) & 398.699 \\
+		L5 & Não aplica limite físico ao RSSI & 398.699 \\
+		L6 & Seleciona o nó sensor \texttt{441a1ed9} & 193.442 \\
+		L7 & Marca trocas de taxa de dados e quedas do FCnt & 193.442 \\
+		L8 & Seleciona o maior trecho sem lacuna maior que 1~h & 58.540 \\
+		L9 & Marca os quadros sem RSSI no \textit{gateway} escolhido & 58.540 \\
+		\hline
+	\end{tabular}
+	\legend{Fonte: elaborado pelos autores.}
+\end{table}
 
-O RSSI e o SNR refletem as condições do enlace de rádio e tendem a variar 
-de forma gradual em condições normais de operação. Variações abruptas nesses 
-indicadores podem sinalizar interferência deliberada, mudança de posição do 
-dispositivo ou substituição fraudulenta de um nó — padrões associados a 
-ataques de \textit{jamming} e \textit{spoofing}, respectivamente. O FCnt, 
-por sua vez, deve apresentar incremento monotônico e regular ao longo do 
-tempo para um dispositivo legítimo. Quebras nesse padrão, como saltos 
-inesperados ou regressões no contador, são características típicas de 
-ataques de \textit{replay}, nos quais mensagens anteriores são 
-retransmitidas por um adversário. O \textit{inter-arrival time} captura o 
-ritmo de transmissão do dispositivo e é especialmente sensível a 
-comportamentos de \textit{flooding} ou a tentativas de esgotamento do 
-canal \cite{hessel2023lorawan}. O \textit{data rate}, embora ajustado 
-dinamicamente pelo mecanismo ADR, também pode apresentar variações anômalas 
-em situações de interferência ou manipulação da comunicação.
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=0.85\textwidth]{tadaki/figuras/ml-funil-limpeza.png}
+	\caption{Quantidade de linhas depois de cada etapa da limpeza e do recorte}
+	\label{fig:ml-funil}
+	\legend{Fonte: elaborado pelos autores.}
+\end{figure}
 
-A seleção final das variáveis a serem utilizadas nos modelos será definida 
-com base na análise exploratória dos dados do Tour Perret descrita na 
-Seção~3.2.1.2, considerando a estabilidade temporal de cada atributo, a 
-presença de valores ausentes e a correlação entre variáveis candidatas. O 
-objetivo é identificar um subconjunto reduzido — preferencialmente de até 
-três variáveis — que concentre o maior poder explicativo para a modelagem do 
-comportamento normal da rede, mantendo a complexidade do modelo compatível 
-com uma eventual análise de portabilidade futura para dispositivos de borda.
+A regra L4 trata como retransmissão o quadro do mesmo nó sensor com o mesmo
+FCnt do anterior, recebido em menos de 60~s, porque o FCnt não sobe quando o
+mesmo quadro é reenviado \cite{lorawan103}. No trecho usado, a janela de 60~s
+não muda nada, pois de 10~s a sem limite são sempre as mesmas 4
+retransmissões. A regra L5 deixa o RSSI sem filtro, porque no trecho usado ele
+fica entre $-120$ e $-90$~dBm e um valor extremo pode trazer informação sobre o
+processo \cite{hyndman2021}, que é justamente o que a detecção procura.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+O estudo usa só o RSSI, de um nó sensor e de um \textit{gateway}. Entre os cinco
+nós sensores, o \texttt{441a1ed9} tem ao mesmo tempo o maior número de quadros
+(193.442), a taxa de dados mais estável (99,99\% em DR5, com 13 trocas) e o
+maior trecho contínuo (58.540 quadros, contra no máximo 24.992 dos outros). O
+\textit{gateway} \texttt{17459c66} é o de maior cobertura desse nó sensor, com
+97,2\% dos quadros. O maior trecho sem intervalo acima de 3.600~s vai de
+16/11/2021 a 08/06/2022, em 203,7 dias, e é o mesmo para qualquer limite entre
+3.600 e 14.400~s.
 
-\subsection{Procedimentos de Treinamento e Avaliação}
+\subsection{Preparação da série}
+\label{subsec:ml-preparacao}
 
-O treinamento dos modelos de regressão será realizado em ambiente 
-computacional convencional, sem restrições relevantes de memória ou 
-processamento. Essa decisão é adequada à fase atual do projeto, cujo 
-objetivo é avaliar a eficácia das abordagens de detecção de anomalias antes 
-de qualquer consideração sobre implantação em dispositivos restritos.
+Depois da limpeza, quatro decisões transformam os quadros em uma série pronta
+para o modelo. A série começa no primeiro quadro com RSSI observado, porque
+antes dele não há valor anterior a repetir, o que descarta 4 quadros e deixa
+58.536. O quadro que o \textit{gateway} escolhido não recebeu, 2,8\% do
+trecho, recebe o último valor observado e fica marcado. Essa forma de
+preencher usa só o passado. Uma alternativa medida, deixar o vazio para o
+próprio modelo tratar, mudou o RMSE de validação do ARIMA por canal de
+1,136 para 1,135~dBm.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+O eixo da série é a ordem dos quadros, e não o relógio, porque o modelo supõe
+passos iguais. O nó sensor transmite a intervalos regulares. O intervalo entre
+quadros consecutivos tem mediana de 300,0~s e fica até 300,03~s em 99\% dos
+casos, e só 24 dos 58.535 intervalos passam de 600~s. A divisão é cronológica,
+como mostra a Tabela~\ref{tab:ml-divisao}.
 
-\subsubsection{Preparação e Divisão dos Dados}
+\begin{table}[htb]
+	\centering
+	\caption{Divisão da série em treino, validação e teste}
+	\label{tab:ml-divisao}
+	\begin{tabular}{lrlr}
+		\hline
+		\textbf{Parte} & \textbf{Quadros} & \textbf{Período (UTC)} & \textbf{Sem RSSI} \\
+		\hline
+		Treino (70\%) & 40.975 & 16/11/2021 a 08/04/2022 & 1.355 \\
+		Validação (15\%) & 8.780 & 08/04/2022 a 08/05/2022 & 121 \\
+		Teste (15\%) & 8.781 & 08/05/2022 a 08/06/2022 & 138 \\
+		\hline
+	\end{tabular}
+	\legend{Fonte: elaborado pelos autores.}
+\end{table}
 
-Antes do treinamento, os dados do Tour Perret serão submetidos a uma etapa 
-de preparação que inclui harmonização de \textit{timestamps}, tratamento de 
-valores ausentes, normalização das variáveis selecionadas e organização das 
-sequências por dispositivo. A divisão dos dados entre conjuntos de 
-treinamento, validação e teste seguirá uma lógica de divisão temporal 
-(\textit{temporal split}), na qual as observações mais antigas compõem o 
-conjunto de treinamento e as mais recentes compõem os conjuntos de validação 
-e teste. Essa abordagem é metodologicamente necessária para séries temporais, 
-pois preserva a ordem cronológica dos dados e evita o vazamento de informação 
-futura para o treinamento (\textit{data leakage}), problema que ocorreria em 
-divisões aleatórias \cite{bergmeir2012, hyndman2021}.
+O treino estima os coeficientes do modelo. A validação serve a todas as
+escolhas, a ordem do modelo e o limiar do alarme. O teste é usado uma única vez
+para cada configuração final.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Protocolo de avaliação da previsão}
+\label{subsec:ml-protocolo}
 
-\subsubsection{Treinamento dos Modelos}
+Toda previsão é um passo à frente. Os coeficientes do ARIMA são estimados uma
+vez no treino e depois aplicados, fixos, ao resto da série
+\cite{statsmodelsapply}, de modo que cada quadro é previsto com os valores
+reais até o quadro anterior, como faria o \textit{gateway}. A diferenciação é
+decidida pelo teste KPSS no treino, a ordem é escolhida pelo RMSE na validação,
+e cada configuração final é avaliada uma única vez no teste.
 
-Os três modelos descritos na Seção~2.3.2 — ARIMA, RNN e LSTM — serão 
-treinados sobre o conjunto de treinamento, exclusivamente com dados que 
-representam a operação normal da rede. Para o ARIMA, a ordem dos componentes 
-autorregressivo, de integração e de média móvel será determinada por meio de 
-análise das funções de autocorrelação e autocorrelação parcial da série 
-\cite{box2015}. Para a RNN e a LSTM, a arquitetura das redes será definida 
-de forma a manter o número de parâmetros em um nível compatível com a 
-complexidade do problema, favorecendo a generalização e a eventual análise 
-de portabilidade.
+O erro é medido pelo RMSE e pelo MAE da Seção~\ref{subsec:ml-avaliacao} e
+também pela mediana do erro absoluto, que indica o erro típico de um quadro.
+As três medidas usam só os quadros com RSSI observado, porque num quadro
+preenchido o \textit{random walk} acerta por construção.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+O modelo é comparado com duas referências. A primeira é o \textit{random walk}
+da Equação~\ref{eq:ml-random-walk}. A segunda, mais exigente, é o
+\textit{random walk} por canal, que repete o último valor observado no mesmo
+canal de frequência. Ganhar desta segunda referência mostra que o modelo
+acrescenta algo além de separar os canais.
 
-\subsubsection{Avaliação da Qualidade de Regressão}
+A robustez dos resultados é verificada de quatro formas. O mesmo procedimento é
+repetido no \textit{gateway} \texttt{100210b9}. A ordem do modelo é variada um
+parâmetro de cada vez, para ver se o resultado depende de uma ordem
+específica. A execução completa, do \textit{dataset} bruto aos resultados, é
+refeita numa cópia isolada do projeto. Por fim, para medir quanto dado de
+treino basta, o ARIMA é estimado com treinos de 6~h a 142 dias, todos
+terminando no fim do treino e avaliados na mesma validação. Um tamanho basta
+quando o RMSE fica abaixo do \textit{random walk} por canal e no máximo 20\%
+acima do obtido com o treino inteiro.
 
-A qualidade de previsão de cada modelo será avaliada sobre o conjunto de 
-teste por meio do Erro Absoluto Médio (MAE) e da Raiz do Erro Quadrático 
-Médio (RMSE). Essas métricas quantificam a magnitude média dos erros de 
-previsão, sendo o RMSE mais sensível a erros grandes e pontuais, e o MAE 
-mais robusto a \textit{outliers} \cite{hyndman2021}.
+\subsection{Protocolo da detecção}
+\label{subsec:ml-protocolo-deteccao}
 
+A detecção usa a regra da Equação~\ref{eq:ml-deteccao} sobre o erro do modelo
+final. Em cada canal, o limiar $\tau$ é o quantil de 99\% do erro absoluto na
+validação, o que fixa cerca de 1\% de alarmes falsos sem depender da suposição
+de normalidade \cite{hundman2018spacecraft}. O limiar nunca fica abaixo de
+1,5~dB, porque o \textit{gateway} informa o RSSI em valores inteiros de dB.
 
-Formalmente, o Erro Absoluto Médio é calculado como:
+Como o \textit{dataset} não tem ataques identificados, a detecção é medida com
+desvios sintéticos, somados a uma cópia do teste. Cada desvio é um degrau de
+$+\Delta$ ou $-\Delta$~dB, com $\Delta$ de 1 a 10~dB, em dois formatos, um de 12
+quadros, cerca de 1~h, e outro de um só quadro. O sentido positivo segue o
+efeito do \textit{jamming} reativo sobre o RSSI \cite{ruotsalainen2022jamming}.
+Cada combinação é aplicada em 300 posições sorteadas do teste, uma de cada vez,
+com semente fixa, e o valor alterado entra no histórico do modelo, como
+aconteceria na borda. As medidas são a taxa de alarmes falsos no teste sem
+desvio e a fração dos desvios com ao menos um alarme, com intervalo de
+confiança de 95\% pelo método de Wilson.
 
-\[
-\mathrm{MAE} = \frac{1}{n} \sum_{i=1}^{n} |y_i - \hat{y}_i|
-\]
+Para saber quanto da detecção vem do modelo, o mesmo protocolo é aplicado a um
+detector mais simples, que usa como previsão o \textit{random walk} por canal.
+Como o RSSI é inteiro, o erro desse detector também é inteiro, e o limiar por
+quantil não consegue fixar o alarme falso em 1\%. Por isso ele é avaliado em
+duas versões. A primeira usa a mesma regra, o que dá menos alarmes falsos que o
+ARIMA, e a segunda usa o limiar um valor inteiro abaixo, o que dá mais.
 
-e a Raiz do Erro Quadrático Médio é:
+\subsection{Execução do detector no microcontrolador}
+\label{subsec:ml-protocolo-borda}
 
-\[
-\mathrm{RMSE} = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
-\]
+Com os coeficientes fixos, a previsão um passo à frente do ARIMA$(0,1,1)$ é a
+suavização exponencial simples \cite{hyndman2021}, como na
+Equação~\ref{eq:ml-borda}, em que $\alpha = 1 + \theta$ e $\theta$ é o
+coeficiente de média móvel estimado no treino de cada canal.
+\begin{equation}
+	\hat{y}_{t+1} = \hat{y}_t + \alpha \left( y_t - \hat{y}_t \right)
+	\label{eq:ml-borda}
+\end{equation}
 
-em que $n$ é o número de observações no conjunto de teste, $y_i$ é o 
-valor observado e $\hat{y}_i$ é o valor previsto pelo modelo no instante $i$.
+Por isso o detector não precisa de biblioteca de séries temporais. Para cada
+canal ele guarda $\alpha$, o limiar e a última previsão. Esses valores são
+exportados do Python para um arquivo de cabeçalho em C++, e o mesmo código é
+compilado para o computador e para a placa Heltec WiFi LoRa 32 V3, com ESP32-S3,
+usada pela frente de infraestrutura. A conferência compara, quadro a quadro,
+a previsão e o alarme do detector com os do Python, na série de teste e na mesma
+série com um desvio sintético de $+5$~dB por 12 quadros. No \textit{gateway} do
+protótipo, o detector roda depois do registro de cada quadro autenticado, sem
+alterar o dado registrado, e um botão da placa soma um desvio sintético ao RSSI
+que o detector recebe, para simular um ataque.
 
-O MAE mede o erro médio em termos absolutos, oferecendo interpretação 
-direta na unidade da variável. O RMSE, ao elevar os erros ao quadrado 
-antes da média, penaliza mais fortemente erros grandes, tornando-o mais 
-sensível a \textit{outliers}. Assim, o MAE é mais robusto a anomalias 
-pontuais, enquanto o RMSE fornece indicação de quão grave são os erros 
-de previsão quando ocorrem.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsubsection{Avaliação da Capacidade de Detecção de Anomalias}
-
-A etapa de detecção de anomalias é conduzida de forma independente da 
-avaliação de regressão, pois um modelo com bom desempenho de previsão não 
-produz necessariamente resíduos bem calibrados para a identificação de 
-desvios \cite{chalapathy2019}. O procedimento consiste em calcular o resíduo 
-entre o valor previsto e o valor observado para cada instante do conjunto de 
-teste e aplicar um critério de limiarização para classificar cada observação 
-como normal ou potencialmente anômala. O limiar será definido com base na 
-distribuição dos resíduos observados no conjunto de validação, adotando como 
-referência um múltiplo do desvio padrão dos erros de treinamento.
-
-Para a avaliação da detecção, serão utilizadas métricas de classificação 
-binária, incluindo precisão, revocação e taxa de falsos positivos. No 
-contexto de segurança em redes IoT, a revocação — isto é, a capacidade do 
-modelo de identificar corretamente eventos anômalos — é a métrica de maior 
-relevância operacional, pois falhas na detecção de ataques reais têm 
-consequências mais graves do que a geração de alarmes falsos \cite{hessel2023lorawan}. 
-A taxa de falsos positivos, por sua vez, é igualmente importante do ponto de 
-vista da operabilidade do sistema, uma vez que um número elevado de alarmes 
-incorretos pode comprometer a confiança e a utilidade prática da solução.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Procedimentos de Treinamento e Avaliação}
-A implementação da abordagem de \textit{Machine Learning} foi concebida a partir da hipótese de que anomalias em redes LoRaWAN podem ser identificadas por meio de desvios em padrões temporais, atributos de enlace e características do tráfego observado. Com base nisso, a estratégia de modelagem foi estruturada em etapas sucessivas: inspeção e padronização dos dados, seleção e engenharia de atributos, treinamento de modelos, comparação entre abordagens e análise dos resultados.
-
-Na etapa de preparação dos dados, torna-se necessário harmonizar \textit{timestamps}, normalizar identificadores de dispositivos e \textit{gateways}, tratar campos ausentes e organizar atributos comuns entre datasets distintos. Em seguida, são construídas variáveis de entrada que representem tanto o estado instantâneo do \textit{frame} quanto seu contexto temporal. Entre os atributos mais relevantes para essa análise, destacam-se métricas como RSSI, SNR, frequência de operação, \textit{data rate}, presença de redundância de recepção, progressão de \textit{frame counters}, intervalo entre mensagens e padrões de repetição de \textit{payload} ou comportamento por dispositivo.
-
-A modelagem pode então ser conduzida por duas frentes complementares. A primeira envolve métodos voltados à detecção de anomalias com pouca ou nenhuma dependência de rótulos completos, o que é particularmente útil em cenários reais de IoT. A segunda envolve, quando houver suporte suficiente dos dados, experimentos comparativos com métodos supervisionados ou semi-supervisionados, sobretudo nos casos em que o dataset apresenta descrição de tráfego manipulado ou cenários de ataque. Essa combinação é apropriada porque permite comparar não apenas acurácia bruta, mas também robustez metodológica diante de diferentes qualidades de rotulação.
-
-Além disso, a estratégia adotada considera que a utilidade dos modelos não deve ser avaliada apenas em função do desempenho estatístico, mas também em relação à sua compatibilidade com execução futura em dispositivos restritos. Por esse motivo, o desenvolvimento da modelagem já considera a complexidade dos métodos, o número de atributos utilizados e o custo potencial de inferência, buscando favorecer posteriormente sua adaptação para contextos de borda. 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

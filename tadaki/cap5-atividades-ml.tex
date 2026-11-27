@@ -1,30 +1,33 @@
-\subsection{Modelo de Machine Learning}
+\subsection{Modelo de detecção}
 
-O desenvolvimento da frente de aprendizado de máquina seguirá um conjunto de
-atividades voltadas à preparação dos dados, treinamento dos modelos e avaliação
-da capacidade de detecção de anomalias. O objetivo dessa etapa é construir uma
-base experimental consistente para comparar diferentes abordagens de regressão
-temporal aplicadas ao comportamento da rede LoRaWAN.
+A frente de aprendizado de máquina seguiu um caminho deliberadamente simples,
+um passo de cada vez. Primeiro mostrou que o RSSI legítimo pode ser previsto
+melhor que pela regra mais simples possível, e só depois mediu a detecção. As
+atividades foram as seguintes, nesta ordem.
 
-As atividades previstas para essa frente de trabalho são:
 \begin{itemize}
-    \item \textbf{Preparação dos datasets:} Organizar os dados selecionados para a etapa de modelagem, com foco principal no dataset Tour Perret e uso complementar do dataset GUARD. Essa preparação incluirá harmonização de timestamps, tratamento de valores ausentes, extração dos atributos relevantes e organização das observações por dispositivo.
+    \item \textbf{Preparação da série.} limpeza do \textit{dataset} Tour Perret
+    com nove regras contadas e recorte de uma série de RSSI de um nó sensor num
+    \textit{gateway}, descritos na Seção~\ref{subsec:ml-limpeza}.
 
-    \item \textbf{Definição e seleção de variáveis:} Avaliar os atributos disponíveis nos datasets e selecionar o subconjunto de variáveis mais adequado para a modelagem temporal do comportamento normal da rede. Entre os candidatos principais estão RSSI, SNR, FCnt, \textit{inter-arrival time} e \textit{data rate}, considerando sua estabilidade temporal, disponibilidade e relevância para a identificação de desvios.
+    \item \textbf{Análise da série.} ACF, PACF e teste KPSS no treino, para
+    decidir a diferenciação.
 
-    \item \textbf{Divisão temporal dos dados:} Separar os dados em conjuntos de treinamento (60\%), validação (20\%) e teste (20\%) por meio de uma divisão cronológica, preservando a ordem temporal das observações e evitando vazamento de informação futura para o treinamento dos modelos.
+    \item \textbf{Previsão.} ARIMA na série inteira, comparado ao
+    \textit{random walk}, e depois um ARIMA por canal de frequência, com a
+    ordem variada um parâmetro de cada vez na validação, avaliados pelo RMSE,
+    pelo MAE e pela mediana do erro absoluto.
 
-    \item \textbf{Exploração e seleção de arquiteturas:} Implementar os modelos ARIMA, RNN e LSTM definidos na etapa metodológica do trabalho. Para cada modelo, será realizada uma exploração de hiperparâmetros e configurações arquiteturais com o objetivo de identificar combinações adequadas ao problema. A seleção de configurações será orientada por critérios de desempenho preditivo e simplicidade estrutural, priorizando modelos com menor complexidade quando o ganho de performance for marginal.
+    \item \textbf{Quantidade de dados.} treinos de 6~h a 142 dias, para medir
+    quanto um nó na borda precisa coletar antes de prever.
 
-    \item \textbf{Treinamento exclusivo em dados normais:} Todos os modelos serão treinados e validados exclusivamente com dados representativos da operação normal da rede (dataset Tour Perret), garantindo que o comportamento esperado seja aprendido sem contaminação por anomalias ou ataques.
+    \item \textbf{Detecção.} limiar por canal calibrado na validação, desvios
+    sintéticos injetados em 300 posições do teste e comparação com um detector
+    mais simples, baseado no \textit{random walk} por canal.
 
-    \item \textbf{Avaliação da qualidade preditiva:} Comparar os modelos com base em métricas de erro de regressão (MAE e RMSE) no conjunto de teste, com o objetivo de verificar qual abordagem representa com maior fidelidade o comportamento esperado das variáveis monitoradas.
-
-    \item \textbf{Calibração de limiar de detecção:} Com base nos resíduos do conjunto de validação, será definido um critério de limiarização (baseado em desvio padrão ou percentis) para classificar observações como normais ou potencialmente anômalas.
-
-    \item \textbf{Avaliação da capacidade de detecção:} Analisar a performance de detecção dos modelos no conjunto de teste e também na aplicação aos dados do dataset GUARD, com o objetivo de verificar se os modelos conseguem identificar anomalias quando confrontados com padrões diferentes ou com ataques conhecidos. Será utilizada a métrica de teste de generalização para avaliar robustez.
-
-    \item \textbf{Análise de viabilidade para execução em borda:} Após a comparação entre os modelos, será realizada uma análise complementar da complexidade das soluções obtidas, considerando número de parâmetros, custo computacional e compatibilidade com uma eventual etapa futura de adaptação para TinyML.
+    \item \textbf{Reprodutibilidade.} cada número gravado por \textit{script} e
+    ligado ao arquivo de origem por resumo SHA-256, com reexecução completa numa
+    cópia isolada do projeto.
 \end{itemize}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Os resultados estão na Seção~\ref{sec:resultados_ml}.
