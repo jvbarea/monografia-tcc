@@ -1,14 +1,16 @@
 \section{Resultados da infraestrutura de comunicação}
 \label{sec:resultados_infra}
 
+Esta seção apresenta os resultados da infraestrutura de comunicação. Ela parte da implementação da Subseção~\ref{subsec:implementacao_infra} e da biblioteca \textit{AsconSecure}, entregue pela frente de segurança (Subseção~\ref{subsec:asconsecure}), e entrega as coletas e a medição de consumo a que a Seção~\ref{sec:resultados_ascon} recorre para situar o custo da cifra no enlace.
+
 \subsection{Configuração do enlace}
 
-As coletas seguiram o protocolo de bancada da Subseção~\ref{subsec:metodo_infra}, e as quatro métricas usadas a seguir (perda de rádio, cadência, RSSI e SNR) são as definidas ali. A Tabela~\ref{tab:parametros_enlace} apresenta os parâmetros do enlace e a razão de cada escolha. O \textit{gateway} registrou cada quadro na serial e, a partir da segunda coleta, também no \textit{backend}. Nas duas últimas coletas, já com o Ascon-128a no enlace, registrou ainda, para cada quadro, o tempo da decifragem e o tempo da validação completa (autenticação, verificação do contador e gravação do maior contador aceito), enviados ao \textit{backend} junto com os metadados de recepção. Ao fim de cada coleta com \textit{backend}, o registro serial e o banco de dados foram conferidos quadro a quadro.
+As coletas seguiram o protocolo de bancada da Subseção~\ref{subsec:metodo_infra}, e as quatro métricas usadas a seguir (perda de rádio, cadência, RSSI e SNR) são as definidas ali. O Quadro~\ref{qua:parametros_enlace} apresenta os parâmetros do enlace e a razão de cada escolha. O \textit{gateway} registrou cada quadro na serial e, a partir da segunda coleta, também no \textit{backend}. Nas duas últimas coletas, já com o Ascon-128a no enlace, registrou ainda, para cada quadro, o tempo da decifragem e o tempo da validação completa (autenticação, verificação do contador e gravação do maior contador aceito), enviados ao \textit{backend} junto com os metadados de recepção. Ao fim de cada coleta com \textit{backend}, o registro serial e o banco de dados foram conferidos quadro a quadro.
 
-\begin{table}[htb]
+\begin{quadro}[htb]
 \centering
 \caption{Parâmetros do enlace e justificativas}
-\label{tab:parametros_enlace}
+\label{qua:parametros_enlace}
 \small
 \begin{tabular}{p{3cm}p{2cm}p{9,4cm}}
 \hline
@@ -21,12 +23,12 @@ Potência & 5 dBm & A poucos metros, potências maiores saturam o receptor e o R
 Período & 5 s & Agendamento em tempo absoluto, sem acúmulo de atraso. \\
 \hline
 \end{tabular}
-\legend{Fonte: elaborado pelos autores (2026).}
-\end{table}
+\legend{Fonte: elaborado pelos autores.}
+\end{quadro}
 
 \subsection{Coletas realizadas}
 
-Foram realizadas quatro coletas, resumidas na Tabela~\ref{tab:coletas}. A primeira, em 23 de agosto, validou o enlace com o quadro em claro de 10 bytes e sem \textit{backend}. A segunda, em 24 de setembro, usou o quadro autenticado de 26 bytes com AES-128-GCM, o algoritmo de linha de base, e o \textit{backend} no ar. A terceira, em 8 de outubro, foi a primeira com o Ascon-128a no enlace, pela biblioteca \textit{AsconSecure} descrita na Subseção~\ref{subsec:asconsecure}; ela validou a integração durante o trabalho de bancada, com as placas sendo manuseadas, e por isso seu RSSI varia mais do que nas outras e não é comparável. A quarta, de 12 para 13 de outubro, foi uma coleta noturna de 8,3 horas sem intervenção, com a mesma configuração, e é a referência de operação normal do enlace com a camada de segurança.
+Foram realizadas quatro coletas, resumidas na Tabela~\ref{tab:coletas}. A primeira, em 23 de agosto, validou o enlace com o quadro em claro de 10 bytes e sem \textit{backend}. A segunda, em 24 de setembro, usou o quadro autenticado de 26 bytes com AES-128-GCM, o algoritmo de linha de base, e o \textit{backend} no ar. A terceira, em 8 de outubro, foi a primeira com o Ascon-128a no enlace, pela biblioteca \textit{AsconSecure} descrita na Subseção~\ref{subsec:asconsecure}. Ela validou a integração durante o trabalho de bancada, com as placas sendo manuseadas, e por isso seu RSSI varia mais do que nas outras e não é comparável. A quarta, de 12 para 13 de outubro, foi uma coleta noturna de 8,3 horas sem intervenção, com a mesma configuração, e é a referência de operação normal do enlace com a camada de segurança.
 
 \begin{table}[htb]
 \centering
@@ -55,7 +57,7 @@ Entregues ao \textit{backend}: ao vivo & n.a. & 857 de 857 & 461 de 461 & 2.432 
 Entregues ao \textit{backend}: do registro serial & n.a. & 0 & 0 & 3.575 \\
 \hline
 \end{tabular}
-\legend{Fonte: elaborado pelos autores (2026).}
+\legend{Fonte: elaborado pelos autores.}
 \end{table}
 
 \begin{figure}[htb]
@@ -63,44 +65,86 @@ Entregues ao \textit{backend}: do registro serial & n.a. & 0 & 0 & 3.575 \\
   \begin{center}
       \includegraphics[width=\textwidth]{barea/figuras/cadencia_coletas.png}
   \end{center}
-  \legend{Fonte: elaborado pelos autores (2026). A faixa sombreada indica $\pm 5$ ms em torno do período. A linha tracejada marca o reinício do nó.}
+  \legend{Fonte: elaborado pelos autores. A faixa sombreada indica $\pm 5$ ms em torno do período. A linha tracejada marca o reinício do nó.}
 \end{figure}
 
-A Figura~\ref{fig:cadencia_coletas} mostra o intervalo entre quadros consecutivos nas duas primeiras coletas, e a Figura~\ref{fig:coleta_noturna}, o intervalo, o RSSI e o tempo de decifragem ao longo da coleta noturna. Em nenhuma das quatro coletas houve perda de rádio, e a cadência ficou dentro de $\pm 5$~ms do período em todos os quadros. O desvio padrão de 1,56~ms em 24 de setembro tem causa identificada: a gravação do contador na memória não volátil, feita pelo nó a cada 32 quadros. Os 13 intervalos de 5.004~ms daquela coleta caem todos em contadores múltiplos de 32, e os 12 de 4.996~ms, no quadro seguinte: a gravação atrasa um quadro em 4~ms e o agendamento em tempo absoluto recupera o atraso no próximo. Na camada Ascon o nó cifra o quadro seguinte logo depois de transmitir, fora do instante de envio, e o desvio caiu para 0,31~ms no trecho da coleta noturna com o \textit{backend} ao vivo. Restou um degrau de 2~ms, para mais ou para menos, concentrado em contadores múltiplos de 32 (40 dos 84 intervalos diferentes de 5.000~ms desse trecho), compatível com a reserva de contadores que a biblioteca faz na memória não volátil; a hipótese não foi confirmada.
+A Figura~\ref{fig:cadencia_coletas} mostra o intervalo entre quadros consecutivos nas duas primeiras coletas, e a Figura~\ref{fig:coleta_noturna}, o intervalo, o RSSI e o tempo de decifragem ao longo da coleta noturna. Em nenhuma das quatro coletas houve perda de rádio, e a cadência ficou dentro de $\pm 5$~ms do período em todos os quadros. O desvio padrão de 1,56~ms em 24 de setembro tem causa identificada, a gravação do contador na memória não volátil, feita pelo nó a cada 32 quadros. Os 13 intervalos de 5.004~ms daquela coleta caem todos em contadores múltiplos de 32, e os 12 de 4.996~ms, no quadro seguinte. A gravação atrasa um quadro em 4~ms e o agendamento em tempo absoluto recupera o atraso no próximo. Na camada Ascon o nó cifra o quadro seguinte logo depois de transmitir, fora do instante de envio, e o desvio caiu para 0,31~ms no trecho da coleta noturna com o \textit{backend} ao vivo. Restou um degrau de 2~ms, para mais ou para menos, concentrado em contadores múltiplos de 32 (40 dos 84 intervalos diferentes de 5.000~ms desse trecho), compatível com a reserva de contadores que a biblioteca faz na memória não volátil, hipótese que não foi confirmada.
 
 \begin{figure}[htb]
-  \caption{\label{fig:coleta_noturna}Coleta noturna de 12 a 13 de outubro: intervalo entre quadros, RSSI e tempo de decifragem}
+  \caption{\label{fig:coleta_noturna}Intervalo entre quadros, RSSI e tempo de decifragem na coleta noturna de 12 a 13 de outubro}
   \begin{center}
       \includegraphics[width=\textwidth]{barea/figuras/coleta_noturna.png}
   \end{center}
-  \legend{Fonte: elaborado pelos autores (2026). A linha tracejada marca a queda do Wi-Fi às 03h08; a área sombreada, os quadros recuperados do registro serial. A faixa verde do painel superior indica $\pm 5$ ms em torno do período.}
+  \legend{Fonte: elaborado pelos autores. A linha tracejada marca a queda do Wi-Fi às 03h08; a área sombreada, os quadros recuperados do registro serial. A faixa verde do painel superior indica $\pm 5$ ms em torno do período.}
 \end{figure}
 
-Depois da queda do Wi-Fi, o intervalo medido passou a alternar entre 4.999 e 5.001~ms, sem nenhum valor em 5.000, exatamente como na coleta de 23 de agosto, em que o \textit{gateway} também operava sem a tarefa de rede. O nó não mudou nada entre os dois trechos, o que indica que a alternância é um efeito da marcação de tempo no \textit{gateway}, com resolução de 1~ms, e não da transmissão: o estado da tarefa de rede desloca o instante em que o quadro recebido é carimbado. A cadência do nó é, portanto, pelo menos tão regular quanto a resolução da medida, e o desvio padrão de 0,80~ms da coleta inteira mistura esses dois regimes de medição.
+Depois da queda do Wi-Fi, o intervalo medido passou a alternar entre 4.999 e 5.001~ms, sem nenhum valor em 5.000, exatamente como na coleta de 23 de agosto, em que o \textit{gateway} também operava sem a tarefa de rede. O nó não mudou nada entre os dois trechos, o que indica que a alternância é um efeito da marcação de tempo no \textit{gateway}, com resolução de 1~ms, e não da transmissão. O estado da tarefa de rede desloca o instante em que o quadro recebido é carimbado. A cadência do nó é, portanto, pelo menos tão regular quanto a resolução da medida, e o desvio padrão de 0,80~ms da coleta inteira mistura esses dois regimes de medição.
 
 \begin{figure}[htb]
   \caption{\label{fig:rssi_integracao}RSSI por quadro na coleta de 24 de setembro}
   \begin{center}
       \includegraphics[width=\textwidth]{barea/figuras/rssi_integracao.png}
   \end{center}
-  \legend{Fonte: elaborado pelos autores (2026). A área sombreada indica o período em que a placa do nó foi manipulada.}
+  \legend{Fonte: elaborado pelos autores. A área sombreada indica o período em que a placa do nó foi manipulada.}
 \end{figure}
 
 \subsection{Discussão}
 
-\textbf{Reinício do nó e perda de rádio.} Na coleta de 24 de setembro, o contador saltou de 126 para 160 com intervalo de 14,7~s entre os dois quadros. Uma contagem simples registraria 33 quadros perdidos, ou 3,7\% de perda. A perda real de 33 quadros teria produzido um intervalo de cerca de 170~s; o intervalo observado e o fato de 160 ser múltiplo de 32 identificam um reinício do nó. A regra que separa os dois casos foi incorporada à API e à ferramenta de análise depois desse achado, e é o motivo de a Tabela~\ref{tab:coletas} distinguir ``pulados'' de ``perdidos''. Para a frente de aprendizado de máquina, a distinção importa: um reinício é um evento do dispositivo, uma perda é um evento do enlace, e um detector treinado sem essa separação aprenderia a confundir os dois. Nas duas coletas com Ascon não houve reinício nem perda: na noturna, os 6.007 contadores, de 1.189 a 7.195, chegaram em sequência.
+\textbf{Reinício do nó e perda de rádio.} Na coleta de 24 de setembro, o contador saltou de 126 para 160 com intervalo de 14,7~s entre os dois quadros. Uma contagem simples registraria 33 quadros perdidos, ou 3,7\% de perda. A perda real de 33 quadros teria produzido um intervalo de cerca de 170~s. O intervalo observado e o fato de 160 ser múltiplo de 32 identificam um reinício do nó. A regra que separa os dois casos foi incorporada à API e à ferramenta de análise depois desse achado, e é o motivo de a Tabela~\ref{tab:coletas} distinguir ``pulados'' de ``perdidos''. Para a frente de aprendizado de máquina, a distinção importa. Um reinício é um evento do dispositivo, uma perda é um evento do enlace, e um detector treinado sem essa separação aprenderia a confundir os dois. Nas duas coletas com Ascon não houve reinício nem perda. Na noturna, os 6.007 contadores, de 1.189 a 7.195, chegaram em sequência.
 
-\textbf{Mudança de regime no RSSI.} A Figura~\ref{fig:rssi_integracao} mostra o RSSI em torno de $-37$~dBm nos primeiros vinte minutos e entre $-30$ e $-33$~dBm a partir do trigésimo quarto, com uma transição no intervalo em que a placa do nó foi manipulada. Não é um fenômeno de rede: é a posição da antena. O episódio ilustra o que os modelos precisam distinguir: uma mudança de regime causada por intervenção física produz uma série que um detector de anomalias marcaria, e só o contexto operacional permite rotulá-la corretamente.
+\textbf{Mudança de regime no RSSI.} A Figura~\ref{fig:rssi_integracao} mostra o RSSI em torno de $-37$~dBm nos primeiros vinte minutos e entre $-30$ e $-33$~dBm a partir do trigésimo quarto, com uma transição no intervalo em que a placa do nó foi manipulada. Não é um fenômeno de rede, é a posição da antena. O episódio ilustra o que os modelos precisam distinguir. Uma mudança de regime causada por intervenção física produz uma série que um detector de anomalias marcaria, e só o contexto operacional permite rotulá-la corretamente.
 
-\textbf{SNR saturado.} Nas quatro coletas a faixa do SNR ficou entre 2,25 e 2,50~dB, inclusive nas 8,3 horas da coleta noturna, sem correlação com o RSSI, que nas três primeiras variou mais de 15~dB. Com as placas a poucos metros, o estimador de SNR do transceptor opera saturado, como discutido na Subseção~\ref{subsec:camada_fisica_lora}. Em bancada, o SNR é uma coluna quase constante e não tem valor como variável de entrada; ele só passa a variar de forma útil em testes de alcance.
+\textbf{SNR saturado.} Nas quatro coletas a faixa do SNR ficou entre 2,25 e 2,50~dB, inclusive nas 8,3 horas da coleta noturna, sem correlação com o RSSI, que nas três primeiras variou mais de 15~dB. Com as placas a poucos metros, o estimador de SNR do transceptor opera saturado, como discutido na Subseção~\ref{subsec:camada_fisica_lora}. Em bancada, o SNR é uma coluna quase constante e não tem valor como variável de entrada. Ele só passa a variar de forma útil em testes de alcance.
 
-\textbf{Tempo no ar.} O tempo no ar calculado pela fórmula do fabricante para o quadro de 26 bytes em SF7 é de 61,7~ms, e para o quadro de 10 bytes, 41,2~ms. O tempo medido da função de transmissão, do início da chamada ao fim da transmissão, foi de 69 e 48~ms, respectivamente. A diferença de cerca de 7~ms é a mesma nos dois quadros, inclusive no de 10 bytes sem cifra, portanto não é custo de criptografia. A maior parte é a espera fixa de 5~ms que a biblioteca de rádio impõe para o oscilador de referência (TCXO) estabilizar, porque o transceptor volta ao modo de espera com o oscilador interno depois de cada transmissão; o restante é a carga do quadro no transceptor pela interface SPI. A camada de segurança acrescentou 50\% ao tempo no ar (de 41,2 para 61,7~ms), quase todo devido à tag de autenticação de 16 bytes; derivar o \textit{nonce} em vez de transmiti-lo evitou outros 16 bytes, que elevariam o tempo no ar a 87,3~ms.
+\textbf{Tempo no ar.} O tempo no ar calculado pela fórmula do fabricante para o quadro de 26 bytes em SF7 é de 61,7~ms, e para o quadro de 10 bytes, 41,2~ms. O tempo medido da função de transmissão, do início da chamada ao fim da transmissão, foi de 69 e 48~ms, respectivamente. A diferença de cerca de 7~ms é a mesma nos dois quadros, inclusive no de 10 bytes sem cifra, portanto não é custo de criptografia. A maior parte é a espera fixa de 5~ms que a biblioteca de rádio impõe para o oscilador de referência (TCXO) estabilizar, porque o transceptor volta ao modo de espera com o oscilador interno depois de cada transmissão. O restante é a carga do quadro no transceptor pela interface SPI. A camada de segurança acrescentou 50\% ao tempo no ar (de 41,2 para 61,7~ms), quase todo devido à \textit{tag} de autenticação de 16 bytes. Derivar o \textit{nonce} em vez de transmiti-lo evitou outros 16 bytes, que elevariam o tempo no ar a 87,3~ms.
 
-\textbf{Custo de processamento da camada de segurança.} Na coleta noturna, a decifragem e a verificação da tag de cada quadro levaram em média 215,0~$\mu$s no \textit{gateway} (51.600 ciclos a 240~MHz; mínimo 207,6, máximo 319,0~$\mu$s), e a validação completa, com a verificação do contador e a gravação do maior contador aceito na memória não volátil, 3,72~ms em média (3,09 a 25,2~ms, o máximo nas gravações). No nó, as 6.013 cifragens registradas durante a sessão levaram 187,4~$\mu$s em média (175,2 a 208,8~$\mu$s). Frente aos 61,7~ms de tempo no ar, a cifra responde por 0,3\% do tempo de um quadro e a validação inteira por 6\%: o custo da camada está nos 16 bytes da tag, não no algoritmo, o que confirma no enlace a conclusão da Seção~\ref{sec:resultados_ascon}. Os tempos por operação são de 7 a 9 vezes maiores do que os medidos em rajada com a mesma biblioteca (Subseção~\ref{subsec:memoria_tempo}), em que a operação se repete milhares de vezes em sequência. Em operação cada chamada ocorre a cada 5~s, com código e dados fora do \textit{cache} do processador, e a diferença é compatível com esse efeito, embora não tenha sido isolada. A Figura~\ref{fig:coleta_noturna} mostra ainda dois patamares de decifragem, 217 e 210~$\mu$s; a primeira transição coincide com a queda do Wi-Fi e a segunda, perto das 6 horas de coleta, com nenhum evento registrado. Os dois núcleos compartilham o \textit{cache} e o barramento de memória, e a atividade da tarefa de rede no segundo núcleo é a explicação mais provável para a diferença de 3\%, mas a causa não foi isolada.
+\textbf{Custo de processamento da camada de segurança.} Na coleta noturna, a decifragem e a verificação da \textit{tag} de cada quadro levaram em média 215,0~$\mu$s no \textit{gateway} (51.600 ciclos a 240~MHz, com mínimo de 207,6 e máximo de 319,0~$\mu$s), e a validação completa, com a verificação do contador e a gravação do maior contador aceito na memória não volátil, 3,72~ms em média (3,09 a 25,2~ms, o máximo nas gravações). No nó, as 6.013 cifragens registradas durante a sessão levaram 187,4~$\mu$s em média (175,2 a 208,8~$\mu$s). Frente aos 61,7~ms de tempo no ar, a cifra responde por 0,3\% do tempo de um quadro e a validação inteira por 6\%. O custo da camada está nos 16 bytes da \textit{tag}, não no algoritmo, o que confirma no enlace a conclusão da Seção~\ref{sec:resultados_ascon}. Os tempos por operação são de 7 a 9 vezes maiores do que os medidos em rajada com a mesma biblioteca (Subseção~\ref{subsec:memoria_tempo}), em que a operação se repete milhares de vezes em sequência. Em operação cada chamada ocorre a cada 5~s, com código e dados fora do \textit{cache} do processador, e a diferença é compatível com esse efeito, embora não tenha sido isolada. A Figura~\ref{fig:coleta_noturna} mostra ainda dois patamares de decifragem, 217 e 210~$\mu$s. A primeira transição coincide com a queda do Wi-Fi e a segunda, perto das 6 horas de coleta, com nenhum evento registrado. Os dois núcleos compartilham o \textit{cache} e o barramento de memória, e a atividade da tarefa de rede no segundo núcleo é a explicação mais provável para a diferença de 3\%, mas a causa não foi isolada.
 
-\textbf{Queda da rede e recuperação.} Às 03h08 de 13 de outubro, 3,4 horas depois do início da coleta noturna, o ponto de acesso Wi-Fi caiu e não voltou. O \textit{gateway} continuou recebendo e registrando na serial os 3.575 quadros seguintes, sem nenhuma perda de rádio, e tentou reenviar: o armazenamento temporário de 512 registros encheu em 43 minutos e, a partir daí, cada quadro novo descartou do reenvio o mais antigo, como previsto em RF6. Ao fim da coleta, os 2.432 quadros entregues ao vivo estavam no banco, e os 3.575 restantes foram inseridos a partir do registro serial pela ferramenta de reprocessamento, com o instante de recepção reconstruído a partir do último quadro entregue ao vivo; a emenda entre os dois trechos ficou em 5,000~s, e a conferência contador a contador não encontrou lacuna nem duplicata. O episódio exercitou o que RF6, RF8 e RF10 exigem e mostrou o limite do armazenamento temporário: 512 registros cobrem 43 minutos a um quadro por 5 segundos, e uma queda de horas depende do registro serial. No trecho ao vivo, o tempo entre a recepção no \textit{gateway} e a gravação no \textit{backend} foi de 159~ms em média e em mediana (32~ms a 4,4~s); o mínimo de 32~ms indica que os relógios das duas máquinas estavam alinhados, ao contrário do observado em 24 de setembro.
+\textbf{Queda da rede e recuperação.} Às 03h08 de 13 de outubro, 3,4 horas depois do início da coleta noturna, o ponto de acesso Wi-Fi caiu e não voltou. O \textit{gateway} continuou recebendo e registrando na serial os 3.575 quadros seguintes, sem nenhuma perda de rádio, e tentou reenviar. O armazenamento temporário de 512 registros encheu em 43 minutos e, a partir daí, cada quadro novo descartou do reenvio o mais antigo, como previsto em RF-I6. Ao fim da coleta, os 2.432 quadros entregues ao vivo estavam no banco, e os 3.575 restantes foram inseridos a partir do registro serial pela ferramenta de reprocessamento, com o instante de recepção reconstruído a partir do último quadro entregue ao vivo. A emenda entre os dois trechos ficou em 5,000~s, e a conferência contador a contador não encontrou lacuna nem duplicata. O episódio exercitou o que RF-I6, RF-I8 e RF-I10 exigem e mostrou o limite do armazenamento temporário. Os 512 registros cobrem 43 minutos a um quadro por 5 segundos, e uma queda de horas depende do registro serial. No trecho ao vivo, o tempo entre a recepção no \textit{gateway} e a gravação no \textit{backend} foi de 159~ms em média e em mediana (32~ms a 4,4~s). O mínimo de 32~ms indica que os relógios das duas máquinas estavam alinhados, ao contrário do observado em 24 de setembro.
 
-\textbf{Limitações.} Uma coleta com perda zero valida a infraestrutura, mas é o caso em que nada está errado: quase toda a variabilidade que um detector precisa aprender está ausente, e as coletas apresentadas servem como referência de comportamento normal, não como conjunto de treinamento. Os dados de aplicação são sintéticos. Em bancada o SNR fica saturado e o RSSI varia poucos decibéis, de modo que duas das variáveis candidatas dos modelos são quase constantes nesses dados. A medição de energia do nó e o teste de alcance com fatores de espalhamento maiores não foram executados. As duas limitações da camada de segurança na linha de base, a janela anti-replay em memória volátil e a chave única compartilhada entre os nós, deixaram de valer com a camada Ascon, em que cada nó tem a própria chave e o \textit{gateway} persiste o maior contador aceito de cada um; a chave, porém, é copiada ao \textit{gateway} na bancada, procedimento que atende a um protótipo e não a uma implantação com muitos nós.
+\subsection{Consumo de energia do nó}
+\label{subsec:energia_infra}
+
+O consumo do nó foi medido em 26 de novembro de 2026 pelo procedimento da Subseção~\ref{subsec:metodo_infra}, com a mesma montagem que a frente de segurança usou para a cifragem isolada (Seção~\ref{subsec:energia_metodo}). A placa foi alimentada pelo pino de 3,3~V, com o cabo USB desconectado, e a tensão medida na placa em repouso foi de 3,1~V. O resistor \textit{shunt} foi de 1~$\Omega$. Cada rajada teve 50 quadros de 26 bytes em SF7, com cerca de 3,4~s, ou 10 quadros em SF12, com cerca de 16,5~s. A Tabela~\ref{tab:energia_no} apresenta a corrente média em cada caso e a energia que o envio de um quadro acrescentou ao repouso, com a placa inteira.
+
+\begin{table}[htb]
+\centering
+\caption{Corrente média e energia por quadro do nó, com 3,1~V na placa e quadro de 26 bytes}
+\label{tab:energia_no}
+\small
+\begin{tabular}{lrr}
+\hline
+\textbf{Caso} & \textbf{Corrente (mA)} & \textbf{Energia (mJ)} \\
+\hline
+Repouso, processador acordado e rádio em espera & 43,5 & n.a. \\
+Controle, processador ocupado e rádio parado & 72,8 & 6,2 \\
+Transmissão em SF7 e 5~dBm, sem cifra & 102,3 & 12,5 \\
+Transmissão em SF7 e 5~dBm, com Ascon-128a & 102,9 & 12,6 \\
+Transmissão em SF7 e 5~dBm, com AES-128-GCM & 100,7 & 12,2 \\
+Transmissão em SF7 e 14~dBm, sem cifra & 129,3 & 18,2 \\
+Transmissão em SF12 e 5~dBm, sem cifra & 97,3 & 276 \\
+\hline
+\end{tabular}
+\legend{Fonte: elaborado pelos autores.}
+\end{table}
+
+Os três casos em SF7 e 5~dBm colocaram no ar o mesmo quadro de 26 bytes e diferiram apenas na cifra, feita dentro da janela medida. A energia por quadro ficou entre 12,2 e 12,6~mJ nos três. A diferença entre eles, de até 0,4~mJ, foi menor que a diferença entre duas capturas do mesmo caso, de cerca de 0,5~mJ. O caso com AES-128-GCM saiu abaixo do caso sem cifra, o que não tem significado físico e confirma que diferenças dessa ordem são dispersão da medida. A cifragem isolada custou 2,2~$\mu$J com o Ascon-128a e 7,8~$\mu$J com o AES-128-GCM na mesma placa (Tabela~\ref{tab:energia_ascon128a}), cerca de 5.700 e 1.600 vezes menos que o quadro. A troca de uma cifra pela outra, portanto, não alterou de forma mensurável a energia de transmitir. A conclusão da Seção~\ref{sec:resultados_ascon}, de que o custo de proteger o enlace está nos bytes transmitidos e não no algoritmo, vale também em energia.
+
+O caso de controle isolou a parcela do processador. A função de transmissão da biblioteca de rádio aguarda o fim do envio com o processador ocupado, e esse estado, sem o rádio, acrescentou 29,3~mA ao repouso, ou 6,2~mJ por quadro. A diferença entre a transmissão e o controle é a parcela do rádio, de 6,3~mJ por quadro em 5~dBm e de 12,0~mJ em 14~dBm. Em 5~dBm, portanto, metade da energia de um envio foi gasta pelo processador em espera, e não pelo transceptor.
+
+Em repouso, com o processador acordado e o rádio em espera, o nó consumiu 43,5~mA, ou 135~mW. Em um ciclo de 5~s isso corresponde a 674~mJ, e o envio do quadro acrescentou 12,5~mJ, 1,9\% do total. O consumo do nó foi dominado pelo tempo acordado entre os envios, e não pela transmissão nem pela cifra. Em SF12 o quadro custou cerca de 276~mJ, 22 vezes o valor em SF7, com corrente semelhante, porque o que aumenta é o tempo no ar.
+
+\subsection{Atendimento dos requisitos}
+
+O Quadro~\ref{qua:rastreabilidade_infra} relaciona cada requisito da Seção~\ref{sec:requisitos_infra} à evidência correspondente. Dos 23 requisitos da infraestrutura, 21 foram atendidos. O RF-I1 foi atendido em parte, porque os dados de aplicação são sintéticos. O RNF-I1 também foi atendido em parte, porque o nó não entra em repouso entre os envios, e a medição de consumo desta seção mostrou que é nesse intervalo que está quase toda a energia gasta.
+
+\subsection{Limitações}
+
+Uma coleta com perda zero valida a infraestrutura, mas é o caso em que nada está errado. Quase toda a variabilidade que um detector precisa aprender está ausente, e as coletas apresentadas servem como referência de comportamento normal, não como conjunto de treinamento. Os dados de aplicação são sintéticos. Em bancada o SNR fica saturado e o RSSI varia poucos decibéis, de modo que duas das variáveis candidatas dos modelos são quase constantes nesses dados. As coletas não incluem distâncias maiores nem fatores de espalhamento acima de 7, e a comparação da coleta própria com o \textit{dataset} de referência não foi executada.
+
+A medição de consumo teve uma captura por caso, e duas apenas no caso com Ascon-128a. A corrente de repouso foi lida em uma captura e deduzida em outra, com 42,4 e 44,5~mA, e as energias por quadro carregam por isso uma incerteza de cerca de 5\%. O valor em SF12 saiu de uma captura mais longa que a tela do osciloscópio e tem incerteza de cerca de 10\%. O consumo com o rádio em repouso profundo não foi medido. A tensão usada nas contas foi a de repouso, o que superestima as energias em até 3\%, porque a queda no resistor aumenta durante a rajada.
+
+As duas limitações da camada de segurança na linha de base, a janela contra repetição em memória volátil e a chave única compartilhada entre os nós, deixaram de valer com a camada Ascon, em que cada nó tem a própria chave e o \textit{gateway} persiste o maior contador aceito de cada um. A chave, porém, é copiada ao \textit{gateway} na bancada, procedimento que atende a um protótipo e não a uma implantação com muitos nós.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

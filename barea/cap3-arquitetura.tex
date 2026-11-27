@@ -1,32 +1,35 @@
 \section{Procedimento de definição da arquitetura do sistema}
 
+Esta seção trata do método da frente de infraestrutura, da definição da arquitetura à bancada de coleta e de medição. Ela entrega o enlace e o registro de metadados sobre os quais a biblioteca da camada de segurança é integrada (Seção~\ref{subsec:biblioteca-ascon}) e dos quais saem as variáveis dos modelos de detecção (Seção~\ref{sec:selecao_variaveis}).
+
 A definição da arquitetura do sistema foi conduzida a partir da combinação entre levantamento bibliográfico, análise técnica das tecnologias envolvidas e separação em módulos da solução proposta. O objetivo dessa etapa foi estruturar uma arquitetura coerente com o problema estudado, considerando as restrições típicas de sistemas embarcados, a necessidade de comunicação em campo e a integração posterior com mecanismos de segurança e análise.
 
-Como referência metodológica para essa definição, o trabalho adota princípios inspirados no modelo RM-ODP, utilizando diferentes pontos de vista para organizar a solução. Em termos funcionais, foram identificados os principais blocos responsáveis pela coleta, encaminhamento, recebimento e armazenamento das informações. Em termos de informação, foram considerados os dados de aplicação e os metadados necessários para rastreabilidade, segurança e análise posterior. Em termos de engenharia, foram observadas as separações entre o trecho embarcado da comunicação, o gateway e a infraestrutura de backend.
+Como referência metodológica para essa definição, o trabalho adota princípios inspirados no modelo RM-ODP, utilizando diferentes pontos de vista para organizar a solução. Em termos funcionais, foram identificados os principais blocos responsáveis pela coleta, encaminhamento, recebimento e armazenamento das informações. Em termos de informação, foram considerados os dados de aplicação e os metadados necessários para rastreabilidade, segurança e análise posterior. Em termos de engenharia, foram observadas as separações entre o trecho embarcado da comunicação, o \textit{gateway} e a infraestrutura de \textit{backend}.
 
-A partir dessa organização, a arquitetura foi estruturada de modo a separar claramente a comunicação em campo da camada de aplicação. Essa separação permite tratar, de forma independente, as restrições energéticas dos nós sensores, o papel intermediário do gateway e as funções de autenticação, persistência e análise associadas ao backend. Com isso, a definição arquitetural deixa de ser apenas uma escolha de componentes e passa a refletir a distribuição de responsabilidades entre as partes do sistema.
+A partir dessa organização, a arquitetura foi estruturada de modo a separar claramente a comunicação em campo da camada de aplicação. Essa separação permite tratar, de forma independente, as restrições energéticas dos nós sensores, o papel intermediário do \textit{gateway} e as funções de autenticação, persistência e análise associadas ao \textit{backend}. Com isso, a definição arquitetural deixa de ser apenas uma escolha de componentes e passa a refletir a distribuição de responsabilidades entre as partes do sistema.
 
-Além da decomposição dos componentes, o procedimento de definição da arquitetura também considerou o fluxo das informações ao longo da solução. Para isso, foram analisadas as interações entre os nós de campo, o gateway e a infraestrutura de backend, buscando garantir que o sistema fosse capaz de receber, registrar e armazenar dados e metadados de forma compatível com as etapas posteriores do trabalho.
+Além da decomposição dos componentes, o procedimento de definição da arquitetura também considerou o fluxo das informações ao longo da solução. Para isso, foram analisadas as interações entre os nós de campo, o \textit{gateway} e a infraestrutura de \textit{backend}, buscando garantir que o sistema fosse capaz de receber, registrar e armazenar dados e metadados de forma compatível com as etapas posteriores do trabalho.
 
 Por fim, a representação da interação entre os principais componentes foi organizada também por meio de diagramas, de modo a tornar mais clara a sequência de eventos envolvida na coleta, no encaminhamento e no armazenamento das mensagens. Essa modelagem auxilia tanto na compreensão da proposta quanto na transição entre a etapa metodológica e a etapa posterior de especificação da arquitetura.
 
 \subsection{Critérios adotados na decomposição arquitetural}
 
-A modularização da arquitetura foi orientada por três critérios principais. O primeiro foi a separação entre o trecho de comunicação em campo e a infraestrutura de aplicação, de modo a preservar as vantagens do uso de LoRa no nível embarcado e da comunicação baseada em rede IP no nível de backend. O segundo foi a definição de responsabilidades distintas para coleta, encaminhamento, autenticação e persistência, evitando concentrar funções heterogêneas em um único componente. O terceiro foi a necessidade de manter a solução compatível com a incorporação posterior de mecanismos de criptografia leve e análise por aprendizado de máquina.
+A modularização da arquitetura foi orientada por três critérios principais. O primeiro foi a separação entre o trecho de comunicação em campo e a infraestrutura de aplicação, de modo a preservar as vantagens do uso de LoRa no nível embarcado e da comunicação baseada em rede IP no nível de \textit{backend}. O segundo foi a definição de responsabilidades distintas para coleta, encaminhamento, autenticação e persistência, evitando concentrar funções heterogêneas em um único componente. O terceiro foi a necessidade de manter a solução compatível com a incorporação posterior de mecanismos de criptografia leve e análise por aprendizado de máquina.
 
-Esses critérios levaram à definição de uma arquitetura em blocos com papéis bem delimitados. No trecho embarcado, concentram-se as funções de aquisição e transmissão inicial dos dados. No ponto de transição, o gateway atua como elemento de integração entre a rede de campo e a infraestrutura de aplicação. No backend, concentram-se as funções de autenticação, persistência e preparação dos dados para uso posterior. Essa divisão favorece clareza arquitetural, reduz acoplamento entre responsabilidades e facilita a evolução incremental da solução.
+Esses critérios levaram à definição de uma arquitetura em blocos com papéis bem delimitados. No trecho embarcado, concentram-se as funções de aquisição e transmissão inicial dos dados. No ponto de transição, o \textit{gateway} atua como elemento de integração entre a rede de campo e a infraestrutura de aplicação. No \textit{backend}, concentram-se as funções de autenticação, persistência e preparação dos dados para uso posterior. Essa divisão favorece clareza arquitetural, reduz acoplamento entre responsabilidades e facilita a evolução incremental da solução.
 
 \subsection{Modelagem das interações e do fluxo de dados}
 
-Para explicitar a dinâmica de funcionamento da proposta, o fluxo principal de interação entre os componentes foi modelado em termos de sequência de eventos. Essa modelagem considera a coleta dos dados no nó de campo, a transmissão pelo enlace LoRa ponto a ponto, a recepção e o enriquecimento da mensagem no gateway, o encaminhamento ao backend por Wi-Fi e HTTP, e o armazenamento final de dados e metadados na infraestrutura de persistência.
+Para explicitar a dinâmica de funcionamento da proposta, o fluxo principal de interação entre os componentes foi modelado em termos de sequência de eventos, como mostra a Figura~\ref{fig:infra_arch_1}. Essa modelagem considera a coleta dos dados no nó de campo, a transmissão pelo enlace LoRa ponto a ponto, a recepção e o enriquecimento da mensagem no \textit{gateway}, o encaminhamento ao \textit{backend} por Wi-Fi e HTTP, e o armazenamento final de dados e metadados na infraestrutura de persistência.
 
 A utilização de um diagrama de sequência nessa etapa é importante porque permite representar, de forma mais direta, a ordem das interações entre os componentes e os pontos em que ocorre o tratamento das mensagens. Com isso, o fluxo deixa de ser apenas uma descrição textual e passa a ser apresentado também como uma sequência organizada de ações entre entidades bem definidas.
 
 \begin{figure}[htb]
-  \caption{\label{infra_arch_1}Diagrama de sequência UML do fluxo principal}
+  \caption{\label{fig:infra_arch_1}Diagrama de sequência UML do fluxo principal}
   \begin{center}
       \includegraphics[scale=0.05]{barea/figuras/arch-2-uml.png}
   \end{center}
+  \legend{Fonte: elaborado pelos autores.}
 
 \end{figure}
 
@@ -35,23 +38,36 @@ Essa representação também ajuda a evidenciar que o sistema foi concebido para
 \subsection{Bancada, protocolo de coleta e métricas}
 \label{subsec:metodo_infra}
 
-A infraestrutura foi construída e avaliada em bancada. Os materiais são duas placas Heltec WiFi LoRa 32 V3 \cite{heltec_wifi_lora_32_v3}, uma no papel de nó e outra no de \textit{gateway}, e um computador na mesma rede local, que executa o \textit{backend}. Nas coletas as placas ficam estáticas, a poucos metros uma da outra, em ambiente interno. O protocolo parte de uma restrição do hardware: abrir a porta serial de uma placa a reinicia, de modo que monitorar o nó interromperia a sessão em curso. Por isso o nó opera em bateria, sem conexão a computador, e o \textit{gateway} é o único ponto de observação. Ele registra cada quadro recebido em uma linha na interface serial e, de forma independente, o envia ao \textit{backend}; ao fim da coleta, o registro serial e o banco de dados são conferidos quadro a quadro, para que uma falha da rede entre \textit{gateway} e \textit{backend} não seja contada como falha do enlace de rádio.
+A infraestrutura é construída e avaliada em bancada. Os materiais são duas placas Heltec WiFi LoRa 32 V3 \cite{heltec_wifi_lora_32_v3}, uma no papel de nó e outra no de \textit{gateway}, e um computador na mesma rede local, que executa o \textit{backend}. Nas coletas as placas ficam estáticas, a poucos metros uma da outra, em ambiente interno. O protocolo parte de uma restrição do \textit{hardware}. Abrir a porta serial de uma placa a reinicia, de modo que monitorar o nó interromperia a sessão em curso. Por isso o nó opera em bateria, sem conexão a computador, e o \textit{gateway} é o único ponto de observação. Ele registra cada quadro recebido em uma linha na interface serial e, de forma independente, o envia ao \textit{backend}. Ao fim da coleta, o registro serial e o banco de dados são conferidos quadro a quadro, para que uma falha da rede entre \textit{gateway} e \textit{backend} não seja contada como falha do enlace de rádio.
 
-A qualidade do enlace é descrita por quatro métricas, todas derivadas do registro do \textit{gateway}. A \textbf{perda de rádio} é o número de contadores ausentes na faixa observada em uma sessão, excluídos os saltos por reinício do nó: como o nó grava o contador na memória não volátil em blocos de 32, um reinício o faz avançar para o próximo múltiplo, e os valores pulados nunca foram transmitidos. Um buraco é classificado como reinício quando o novo contador é múltiplo de 32 e o intervalo entre os dois quadros recebidos é menor do que 75\% do intervalo que a perda dos quadros ausentes teria produzido. A \textbf{cadência} é a média e o desvio padrão do intervalo entre quadros de contadores consecutivos; intervalos que atravessam um buraco não entram, e o primeiro quadro de cada sessão tem intervalo nulo, não zero. \textbf{RSSI} e \textbf{SNR} são descritos por média e faixa.
+A qualidade do enlace é descrita por quatro métricas, todas derivadas do registro do \textit{gateway}. A \textbf{perda de rádio} é o número de contadores ausentes na faixa observada em uma sessão, excluídos os saltos por reinício do nó. Como o nó grava o contador na memória não volátil em blocos de 32, um reinício o faz avançar para o próximo múltiplo, e os valores pulados nunca foram transmitidos. Um buraco é classificado como reinício quando o novo contador é múltiplo de 32 e o intervalo entre os dois quadros recebidos é menor do que 75\% do intervalo que a perda dos quadros ausentes teria produzido. A \textbf{cadência} é a média e o desvio padrão do intervalo entre quadros de contadores consecutivos. Intervalos que atravessam um buraco não entram, e o primeiro quadro de cada sessão tem intervalo nulo, não zero. \textbf{RSSI} e \textbf{SNR} são descritos por média e faixa.
 
-A construção seguiu sete marcos, cada um com um critério de aceite verificado na própria placa:
+O consumo de energia do nó é medido com a montagem que a frente de segurança descreve na Seção~\ref{subsec:energia_metodo}, com um resistor \textit{shunt} em série com o retorno de terra da placa e um osciloscópio. Um \textit{firmware} de medição repete a transmissão em rajadas e mantém um pino de saída em nível alto durante cada rajada, o que delimita a janela de medida. A energia que um envio acrescenta ao repouso é o produto da tensão na placa pelo acréscimo de corrente e pela duração da rajada, dividido pelo número de quadros. Um caso de controle, em que o processador aguarda pelo tempo de uma transmissão com o rádio parado, separa a parcela do processador da parcela do rádio. Dois casos cifram cada quadro antes de transmitir, um com Ascon-128a e outro com AES-128-GCM, para comparar o envio com e sem cifra.
 
-\begin{enumerate}
-    \item cadeia de ferramentas: o firmware é compilado e gravado nas duas placas;
-    \item rádio: o transceptor inicializa com os parâmetros do enlace;
-    \item enlace ponta a ponta: o \textit{gateway} registra cada quadro recebido, com RSSI e SNR;
-    \item sensores reais: os dados de aplicação deixam de ser sintéticos;
-    \item Wi-Fi, HTTP e API: o \textit{backend} recebe e persiste os quadros encaminhados pelo \textit{gateway};
-    \item energia: o consumo do nó é medido por estado de operação, por transmissão e por cifragem;
-    \item segurança do enlace: o quadro é cifrado e autenticado, e o \textit{gateway} rejeita quadros forjados e repetidos.
-\end{enumerate}
+A construção segue sete etapas, cada uma com um critério de aceite verificado na própria placa, reunidas no Quadro~\ref{qua:etapas_infra}.
 
-Os três primeiros são sequenciais, da cadeia de ferramentas ao enlace ponta a ponta. Os outros quatro acrescentam sensores, rede, medição de energia e segurança sobre essa base e não dependem uns dos outros. Os parâmetros do enlace e as coletas realizadas estão na Seção~\ref{sec:resultados_infra}, e a cronologia dos marcos, na Tabela~\ref{tab:marcos_cronologia}.
+\begin{quadro}[htb]
+\centering
+\caption{Etapas de construção da infraestrutura e critérios de aceite}
+\label{qua:etapas_infra}
+\small
+\begin{tabular}{clp{9,5cm}}
+\hline
+\textbf{Etapa} & \textbf{Objetivo} & \textbf{Critério de aceite} \\
+\hline
+1 & Cadeia de ferramentas & O \textit{firmware} é compilado e gravado nas duas placas \\
+2 & Rádio & O transceptor inicializa com os parâmetros do enlace \\
+3 & Enlace ponta a ponta & O \textit{gateway} registra cada quadro recebido, com RSSI e SNR \\
+4 & Sensores reais & Os dados de aplicação deixam de ser sintéticos \\
+5 & Wi-Fi, HTTP e API & O \textit{backend} recebe e persiste os quadros encaminhados pelo \textit{gateway} \\
+6 & Energia & O consumo do nó é medido em repouso, por transmissão e por cifragem \\
+7 & Segurança do enlace & O quadro é cifrado e autenticado, e o \textit{gateway} rejeita quadros forjados e repetidos \\
+\hline
+\end{tabular}
+\legend{Fonte: elaborado pelos autores.}
+\end{quadro}
+
+As três primeiras são sequenciais, da cadeia de ferramentas ao enlace ponta a ponta. As outras quatro acrescentam sensores, rede, medição de energia e segurança sobre essa base e não dependem umas das outras. Os parâmetros do enlace e as coletas realizadas estão na Seção~\ref{sec:resultados_infra}, e a cronologia das etapas, no Quadro~\ref{qua:etapas_cronologia}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
