@@ -1,0 +1,15 @@
+Na frente de aprendizado de máquina, um ARIMA$(0,1,1)$ por canal de frequência
+previu o RSSI de um nó sensor real um passo à frente com RMSE de 1,091~dB e MAE
+de 0,813~dB no teste, contra 1,319 e 0,902~dB do \textit{random walk} por canal
+(Seção~\ref{subsec:ml-res-frequencia}). A maior parte do erro que sobrava no
+modelo da série inteira veio da troca de canal a cada quadro, já que cada canal
+teve um nível próprio de RSSI. Com 14 dias de treino, cerca de 500 quadros por
+canal, o modelo atendeu ao critério em todos os períodos avaliados, nos dois
+\textit{gateways} estudados. Com cerca de 1\% de alarmes falsos, a regra baseada
+no erro de previsão detectou, em 300 posições do teste, todos os desvios
+sintéticos de 5~dB ou mais que duraram cerca de 1~h, e de 91\% a 92\% dos
+desvios pontuais de 5~dB (Seção~\ref{subsec:ml-res-deteccao}). Em desvios
+pontuais, o modelo detectou mais que um detector baseado no \textit{random walk}
+por canal, mesmo quando este tinha quase o dobro de alarmes falsos
+(Seção~\ref{subsec:ml-res-comparacao}). Esses resultados medem a sensibilidade
+a desvios sintéticos, e não a detecção de ataques reais.

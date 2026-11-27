@@ -1,216 +1,179 @@
-\section{Machine Learning}
+\section{Aprendizado de Máquina para Detecção de Anomalias}
+\label{sec:ml-conceitos}
 
-O uso de \textit{Machine Learning} é coerente com o estado da arte recente. 
-Trabalhos como \cite{farhad2023} demonstram que Machine Learning em 
-LoRaWAN vem sendo explorado para otimizar parâmetros de rede 
-(\textit{spreading factor}, potência de transmissão) e classificar padrões 
-de mobilidade.
-
- Embora parte significativa da literatura esteja concentrada em 
-desempenho e eficiência, esse mesmo conjunto de atributos também é 
-extremamente relevante para tarefas de segurança e detecção de anomalias, 
-já que comportamentos suspeitos frequentemente se refletem justamente em 
+O uso de aprendizado de máquina é coerente com o estado da arte recente.
+Trabalhos como \cite{farhad2023} demonstram que o aprendizado de máquina em
+LoRaWAN vem sendo explorado para otimizar parâmetros de rede
+(\textit{spreading factor}, potência de transmissão) e classificar padrões
+de mobilidade. Embora parte significativa da literatura esteja concentrada em
+desempenho e eficiência, esse mesmo conjunto de atributos também é relevante
+para a detecção de anomalias, já que comportamentos suspeitos se refletem em
 mudanças desses padrões operacionais \cite{farhad2023, vangelista2023}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Detecção de Anomalias como Problema de Regressão Temporal}
-
-Em redes LoRaWAN operando em condições reais, os dispositivos finais 
-transmitem mensagens de forma periódica ou orientada a evento, produzindo 
-naturalmente sequências de observações ao longo do tempo. Grandezas como a 
-intensidade do sinal recebido, a relação sinal-ruído e os contadores de 
-quadros variam de forma contínua e apresentam padrões de comportamento 
-relativamente estáveis durante a operação normal da rede. Assim, desvios 
-abruptos ou sistemáticos nesses padrões podem indicar a presença de falhas, 
-interferências ou atividades maliciosas, tornando a análise temporal dessas 
-variáveis uma abordagem promissora para a detecção de anomalias.
-
-No entanto, a aplicação de técnicas supervisionadas de classificação enfrenta 
-uma limitação estrutural importante nesse contexto. Em ambientes de operação 
-real, dados rotulados que identifiquem explicitamente quadros legítimos e 
-quadros associados a ataques são menos presentes.
-
- O \textit{dataset} Tour Perret, 
-utilizado neste trabalho, é representativo da condição: trata-se de um 
-conjunto de dados proveniente de sensores reais instalados na Tour Perret, 
-em Grenoble, que registra o comportamento contínuo da rede sem a presença 
-de rótulos de ataque. Essa característica inviabiliza a utilização direta 
-de classificadores supervisionados e exige uma abordagem metodológica 
-distinta - o aprendizado de padrões esperados. Mas devido a sua grande volumetria e qualidade geral de dados, esta fonte será utilizada como principal, para treinos não supervisionados, assim como descrito na seção 3.2.1.1.
-
-
-A estratégia adotada neste trabalho baseia-se na modelagem do comportamento 
-esperado das variáveis de rede ao longo do tempo, por meio de modelos de 
-regressão para séries temporais. Nessa abordagem, o modelo é treinado 
-exclusivamente sobre dados que representam a operação normal da rede, 
-aprendendo os padrões temporais característicos de cada variável monitorada. Durante a fase de inferência, o modelo produz uma previsão do valor esperado 
-para cada instante de tempo, e o resíduo entre o valor previsto e o valor 
-observado é utilizado como indicador de anomalia. Observações cujo resíduo 
-supere um limiar previamente definido (Como 3 desvios padrão da média) são sinalizadas como potencialmente 
-anômalas. Esse princípio, conhecido na literatura como detecção de anomalias 
-baseada em previsão, tem sido aplicado com sucesso em contextos de IoT e 
-redes de sensores justamente por não depender da disponibilidade de dados 
-rotulados de ataque \cite{chalapathy2019}.
-
-
-\subsubsection{Contexto Prático dos Datasets Disponíveis}
-
-A escolha da abordagem não supervisionada é também sustentada por 
-limitações práticas do contexto. Para este trabalho, dois datasets 
-públicos foram selecionados estrategicamente:
-
-\begin{description}
-    \item[Tour Perret (Treinamento/Validação):] Dados reais de operação 
-    normal, sem injeção ou simulação de ataques. Adequado para aprender 
-    padrões verdadeiros de comportamento esperado.
-    
-    \item[GUARD (Validação contra Ataques Conhecidos):] Dados com ataques 
-    rotulados (replay, spoofing). Permite verificar se o modelo detecta 
-    desvios associados a ataques já identificados.
-\end{description}
-
-Esta estratégia de dois datasets permite validação em duas fases: 
-primeiro, verificar se o modelo aprendeu comportamento normal 
-corretamente (Seção 3.2.3.3); segundo, verificar se detecta anomalias 
-quando confrontado com ataques conhecidos (Seção 3.2.3.4). A descrição 
-detalhada destes datasets é apresentada na Seção 3.2.1.
-
-
-Essa escolha também apresenta uma vantagem interpretativa relevante para o 
-contexto do trabalho. Ao modelar o comportamento normal da rede, torna-se 
-possível não apenas detectar anomalias, mas também caracterizá-las em termos 
-da magnitude e da persistência do desvio observado, oferecendo informações 
-mais ricas do que uma simples classificação binária. Além disso, a abordagem 
-por regressão é mais adaptável a variações graduais do comportamento da rede 
-ao longo do tempo, como mudanças sazonais ou degradação natural do sinal, 
-uma vez que o modelo pode ser periodicamente reatualizado com dados recentes 
-de operação normal.
+Esta seção trata dos conceitos de séries temporais e de detecção de anomalias
+usados pela frente de aprendizado de máquina. Eles sustentam o método da
+Seção~\ref{subsec:ml-dataset} e os resultados da Seção~\ref{sec:resultados_ml}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Modelos de Regressão para Séries Temporais}
+\subsection{Por que detectar desvios do RSSI}
+\label{subsec:ml-motivacao}
 
-A escolha dos modelos de regressão utilizados neste trabalho foi orientada 
-pela necessidade de cobrir paradigmas metodológicos distintos, permitindo 
-uma comparação fundamentada entre abordagens estatísticas clássicas e 
-métodos baseados em aprendizado profundo. 
+A autenticação de um quadro, pelo código de integridade do LoRaWAN ou pela
+\textit{tag} do Ascon usada no protótipo da equipe, mostra que o remetente
+conhece a chave da sessão. Ela não mostra de onde o sinal partiu. Se a chave de
+um nó sensor for obtida por um atacante, os quadros que ele enviar serão
+aceitos como legítimos, e o conteúdo não permite distingui-los dos do nó
+verdadeiro. Esse é o caso de \textit{spoofing} que a criptografia não cobre.
 
-Nesse sentido, foram selecionados a princípio, 
-três modelos: o ARIMA, a Rede Neural Recorrente simples (RNN) e a Rede de 
-Memória Longa de Curto Prazo (LSTM). 
+O que ainda diferencia o atacante é a camada física. Um transmissor em outra
+posição, ou com outra potência, chega ao \textit{gateway} com outro RSSI, e o
+\textit{gateway} já mede o RSSI de todo quadro, sem mudança no protocolo. Na
+literatura, desvios do RSSI fora da faixa esperada para o nó são tratados como
+indício de \textit{spoofing} \cite{pourghasem2025spoofing}, e desvios nos
+metadados de rádio, entre eles o RSSI, expõem o \textit{jamming} reativo
+\cite{ruotsalainen2022jamming}.
 
-Os critérios para seleção foram:
-(1) \textbf{Progressão de complexidade}: ARIMA (modelo clássico, estatístico) 
-→ RNN (neural simples) → LSTM (neural com gates). Isto permite identificar 
-em qual ponto a complexidade traz ganho real.
-(2) \textbf{Representatividade de paradigmas}: cobrindo abordagem 
-estatística, neural simples e neural avançada.
-(3) \textbf{Adequação ao problema}: todos três são apropriados para séries 
-temporais em IoT.
-Estes pontos serão descritos com referências e de maneira mais profunda abaixo.
+O RSSI, porém, também muda sem ataque, com o canal de frequência, a taxa de
+dados e o ambiente (Seção~\ref{subsec:ml-rssi}). Um desvio só tem significado
+em relação ao valor esperado para aquele nó naquele momento. Por isso a
+detecção deste trabalho prevê o RSSI de cada quadro e alarma quando o valor
+observado se afasta da previsão além de um limiar
+(Seção~\ref{subsec:ml-deteccao}). Prever, em vez de comparar com um valor
+fixo, acompanha as mudanças de nível que acontecem sem ataque, e não exige
+exemplos rotulados de ataque para o treino. Como a previsão usa só quadros
+passados, a decisão pode ser tomada no próprio \textit{gateway}, quando cada
+quadro chega \cite{blazquez2021review}, o que pede um modelo leve o bastante
+para um microcontrolador.
 
-Outras alternativas foram consideradas (XGBoost, Prophet) mas não incluídas 
-porque: XGBoost não é recorrente (inadequado para séries longas); Prophet é 
-baseado em tendência, não em detecção de anomalia.
+\subsection{O RSSI como série temporal}
+\label{subsec:ml-rssi}
 
-Essa progressão é metodologicamente 
-importante porque permite identificar em que ponto a complexidade adicional 
-do modelo se traduz em ganho efetivo de desempenho para o problema específico 
-de detecção de anomalias em redes LoRaWAN.
+O RSSI é a potência com que o \textit{gateway} recebe um quadro, em dBm. O
+valor é negativo e é mais forte quanto mais perto de zero \cite{ttnrssi}. O nó
+sensor não escolhe o \textit{gateway}. Todos os \textit{gateways} ao alcance
+recebem o mesmo quadro, e cada um mede o seu próprio RSSI
+\cite{brocaarintegration}. Para formar uma série temporal é preciso, portanto,
+fixar um par de nó sensor e \textit{gateway}. Como o RSSI é medido no
+\textit{gateway}, ele fica fora da proteção dada pela cifragem do
+\textit{payload}.
 
-O ARIMA (\textit{Autoregressive Integrated Moving Average}) é um modelo 
-estatístico clássico amplamente utilizado para modelagem e previsão de séries 
-temporais estacionárias \cite{box2015}. Sua formulação combina três 
-componentes: um componente autorregressivo, que modela a dependência linear 
-entre o valor atual e valores passados da série; um componente de integração, 
-que torna a série estacionária por meio de diferenciação; e um componente de 
-média móvel, que modela a dependência em relação aos erros de previsão 
-anteriores. A principal vantagem do ARIMA neste contexto é sua 
-interpretabilidade: os parâmetros do modelo têm significado estatístico 
-direto e o comportamento do modelo pode ser analisado formalmente. Por esse 
-motivo, o ARIMA é utilizado neste trabalho como \textit{baseline} estatístico, 
-estabelecendo um patamar de referência para a avaliação dos modelos neurais 
-subsequentes. Sua limitação principal reside na suposição de linearidade das 
-dependências temporais, o que pode ser insuficiente para capturar padrões 
-mais complexos presentes em séries de redes de sensores.
+O RSSI muda também sem ataque. O nó sensor troca de canal de frequência de
+forma pseudoaleatória a cada transmissão \cite{lorawan103}, e a taxa de dados
+adaptativa (ADR) pode mudar a taxa de dados e a potência de transmissão
+\cite{ttnadr}. Além disso, um contador de quadros (FCnt) repetido indica o
+mesmo quadro enviado de novo, e não uma medida nova \cite{lorawan103}.
 
-As Redes Neurais Recorrentes (RNNs) representam uma extensão natural das 
-redes neurais artificiais para o domínio de sequências temporais 
-\cite{rumelhart1986}. Diferentemente das redes neurais tradicionais, as RNNs 
-mantêm um estado interno que é atualizado a cada instante de tempo, 
-permitindo que informações de observações anteriores influenciem a previsão 
-atual. Essa característica as torna adequadas para modelar dependências 
-temporais sem a necessidade de especificação manual da ordem de defasagem, 
-como ocorre no ARIMA. Neste trabalho, a RNN simples é utilizada como 
-\textit{baseline} neural, representando o paradigma recorrente em sua forma 
-mais elementar e servindo de referência para a avaliação da LSTM.
+\subsection{Autocorrelação e estacionariedade}
+\label{subsec:ml-autocorrelacao}
 
-A Rede de Memória Longa de Curto Prazo (LSTM, do inglês 
-\textit{Long Short-Term Memory}) é uma arquitetura recorrente desenvolvida 
-especificamente para superar uma limitação fundamental das RNNs simples: o 
-problema do desvanecimento do gradiente durante o treinamento 
-\cite{hochreiter1997}. Em sequências longas, as RNNs tendem a perder a 
-capacidade de propagar informações relevantes de instantes distantes no 
-tempo, o que limita sua eficácia na modelagem de dependências temporais de 
-longo alcance. A LSTM contorna esse problema por meio de uma estrutura de 
-células de memória controladas por portões de entrada, esquecimento e saída, 
-que regulam seletivamente quais informações devem ser retidas, atualizadas 
-ou descartadas ao longo da sequência. Essa capacidade é especialmente 
-relevante no contexto de redes LoRaWAN, onde padrões anômalos podem se 
-manifestar como desvios sutis acumulados ao longo de múltiplos quadros 
-consecutivos, e não necessariamente como eventos isolados e abruptos. Por 
-esse conjunto de razões, a LSTM é tratada neste trabalho como o modelo 
-principal da abordagem proposta, sendo avaliada em comparação com os dois 
-\textit{baselines} anteriores.
+A função de autocorrelação (ACF) mede a relação linear entre a série e ela
+mesma deslocada de $k$ passos, chamados de defasagem. A função de
+autocorrelação parcial (PACF) mede a mesma relação depois de remover o efeito
+das defasagens intermediárias \cite{hyndman2021}.
 
-A avaliação comparativa dos três modelos será conduzida com base em métricas 
-de erro de regressão, notadamente o Erro Absoluto Médio (MAE) e a Raiz do 
-Erro Quadrático Médio (RMSE), aplicadas sobre o conjunto de teste. Para a 
-etapa de detecção de anomalias, o resíduo de cada modelo será submetido a 
-um critério de limiarização, e o desempenho da detecção será avaliado por 
-meio de métricas como precisão, revocação e taxa de falsos positivos. Essa 
-distinção entre a avaliação da qualidade de previsão e a avaliação da 
-capacidade de detecção é metodologicamente necessária, pois um modelo pode 
-apresentar bom desempenho de regressão sem necessariamente produzir resíduos 
-bem calibrados para a identificação de anomalias.
+Uma série é estacionária quando as suas propriedades estatísticas não dependem
+do instante observado. A diferenciação, que troca cada valor pela diferença em
+relação ao anterior, remove mudanças de nível. No teste KPSS, a hipótese nula é
+que a série é estacionária, e um valor-p pequeno indica que é preciso
+diferenciar \cite{hyndman2021}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Modelos de previsão}
+\label{subsec:ml-modelos}
 
-\subsection{Considerações sobre Inferência em Dispositivos de Borda}
+A referência mais simples é o \textit{random walk}, cuja previsão é a última
+observação \cite{hyndman2021}, como na Equação~\ref{eq:ml-random-walk}.
+\begin{equation}
+	\hat{y}_t = y_{t-1}
+	\label{eq:ml-random-walk}
+\end{equation}
 
-O treinamento e a avaliação dos modelos descritos neste trabalho são 
-realizados em ambiente computacional convencional, com recursos de memória e 
-processamento sem restrições relevantes. Essa decisão é adequada à fase 
-atual do projeto, cujo objetivo central é investigar a eficácia das 
-abordagens de detecção de anomalias antes de considerar questões de 
-implantação.
+O ARIMA$(p,d,q)$ combina $p$ termos autorregressivos, $d$ diferenciações e $q$
+termos de médias móveis dos erros anteriores \cite{box2015, hyndman2021}. Com o
+operador de atraso $B$, tal que $B y_t = y_{t-1}$, o modelo se escreve como na
+Equação~\ref{eq:ml-arima}, em que $\varepsilon_t$ é um ruído branco.
+\begin{equation}
+	\left(1 - \phi_1 B - \dots - \phi_p B^p\right)(1-B)^d y_t = c + \left(1 + \theta_1 B + \dots + \theta_q B^q\right)\varepsilon_t
+	\label{eq:ml-arima}
+\end{equation}
 
-No entanto, uma perspectiva relevante para a continuidade do trabalho envolve 
-a possibilidade de execução do modelo treinado diretamente no gateway, 
-eliminando a necessidade de transmissão dos dados brutos para uma camada 
-externa de processamento. Esse paradigma, frequentemente referenciado na 
-literatura como \textit{TinyML} ou inferência em borda, consiste na adaptação 
-de modelos de aprendizado de máquina para execução em microcontroladores com 
-severas restrições de memória RAM, armazenamento em \textit{flash} e consumo 
-energético \cite{ray2022}.
+O \textit{random walk} é o caso ARIMA$(0,1,0)$, e o ARIMA$(0,1,1)$ equivale à
+suavização exponencial simples \cite{hyndman2021}. Os coeficientes podem ser
+estimados uma vez e depois aplicados, fixos, a uma série mais longa
+\cite{statsmodelsapply}. Assim se obtém a previsão um passo à frente, em que
+cada valor é previsto com as observações reais até o instante anterior.
 
-A viabilidade dessa portabilidade depende fundamentalmente da complexidade do 
-modelo resultante após o treinamento. Modelos com menor número de parâmetros 
-e estruturas mais simples, como RNNs com poucas unidades recorrentes ou 
-versões reduzidas da LSTM, são candidatos mais adequados à conversão para 
-formatos otimizados de inferência, como o TensorFlow Lite for 
-Microcontrollers. Técnicas adicionais de compressão, como quantização de 
-pesos e poda de conexões, podem reduzir ainda mais o custo computacional sem 
-perda significativa de desempenho \cite{jacob2018}.
+\subsection{Avaliação da previsão}
+\label{subsec:ml-avaliacao}
 
-Neste trabalho, a análise da complexidade dos modelos treinados será 
-conduzida como critério complementar de avaliação, com o objetivo de fornecer 
-subsídios para essa investigação futura. Contudo, a portabilidade efetiva 
-para o gateway não constitui um requisito do projeto atual, sendo tratada 
-como uma perspectiva de continuidade a ser explorada em trabalhos 
-subsequentes, conforme discutido na Seção 7.3.
+Os dados de treino estimam os parâmetros, e os de teste, que não entram no
+ajuste, medem a acurácia. Em séries temporais a divisão é cronológica, para que
+nenhuma informação futura entre no treino \cite{hyndman2021, bergmeir2012}.
+Entre treino e teste, um conjunto de validação serve para as escolhas, como a
+ordem do modelo, de modo que o teste seja usado só para a medida final.
 
+O erro de previsão é medido por duas métricas na unidade dos dados, a raiz do
+erro quadrático médio (RMSE) e o erro absoluto médio (MAE), definidas nas
+Equações~\ref{eq:ml-rmse} e~\ref{eq:ml-mae} \cite{hyndman2021}.
+\begin{equation}
+	\mathrm{RMSE} = \sqrt{\frac{1}{N}\sum_{t=1}^{N}\left(y_t - \hat{y}_t\right)^2}
+	\label{eq:ml-rmse}
+\end{equation}
+\begin{equation}
+	\mathrm{MAE} = \frac{1}{N}\sum_{t=1}^{N}\left|y_t - \hat{y}_t\right|
+	\label{eq:ml-mae}
+\end{equation}
+O RMSE dá mais peso aos erros grandes, e o MAE pesa todos os erros igualmente.
+Um método que minimiza o MAE leva a previsões da mediana, e um que minimiza o
+RMSE, a previsões da média \cite{hyndman2021}. Uma diferença de ordem entre as
+duas métricas indica que a comparação depende do tamanho dos erros
+considerados.
 
+\subsection{Detecção de anomalias por previsão}
+\label{subsec:ml-deteccao}
 
-entrar no mestrado de engenharia mecânica
+Em operação real, dados rotulados que identifiquem quadros associados a
+ataques são raros, o que dificulta o uso de classificadores supervisionados.
+Por isso a detecção é tratada como um problema de previsão. Um modelo estima o
+valor esperado de cada observação a partir das anteriores, e o ponto é
+declarado anômalo quando a distância entre o valor observado $x_t$ e o valor
+esperado $\hat{x}_t$ passa de um limiar $\tau$ \cite{blazquez2021review,
+chalapathy2019}, como na Equação~\ref{eq:ml-deteccao}. Quando $\hat{x}_t$ vem
+só de observações passadas, a decisão é tomada sobre cada dado no momento em
+que ele chega, o que permite executá-la na borda da rede.
+\begin{equation}
+	\left| x_t - \hat{x}_t \right| > \tau
+	\label{eq:ml-deteccao}
+\end{equation}
+
+Sob resíduos normais e sem correlação, $\tau$ pode ser $c$ vezes o desvio
+padrão dos resíduos, com $c = 2{,}58$ para 99\% \cite{hyndman2021}. Quando a
+suposição de normalidade falha, um limiar não paramétrico, tirado da própria
+distribuição dos erros, é uma alternativa \cite{hundman2018spacecraft}. Em
+LoRaWAN, o \textit{jamming} reativo aumenta o RSSI e é detectado comparando os
+metadados recebidos com os esperados para o nó sensor
+\cite{ruotsalainen2022jamming}, e desvios do RSSI fora da faixa esperada são
+tratados como indício de \textit{spoofing} \cite{pourghasem2025spoofing}.
+
+\subsection{Trabalhos relacionados e lacuna}
+\label{subsec:ml-lacuna}
+
+A literatura sobre o RSSI em redes LoRaWAN se divide em duas linhas que pouco se
+encontram. A primeira prevê o RSSI. \citeonline{guerra2024forecasting}
+compararam ARIMA, inteligência artificial e modelos híbridos em médias horárias
+de oito nós, e o ARIMA com a temperatura como variável externa foi a
+alternativa mais competitiva. \citeonline{fhima2026harbors} previram vários
+passos à frente o RSSI de nós móveis num porto, reajustando o modelo a cada
+ponto. Nenhum dos dois usa a previsão para detectar anomalias, nem trata o
+canal de frequência, que \citeonline{harinda2022multigateway} não viram afetar o
+RSSI em ambiente interno.
+
+A segunda linha detecta ataques pelos metadados de rádio.
+\citeonline{ruotsalainen2022jamming} compara os metadados recebidos com os
+esperados para o nó, e \citeonline{pourghasem2025spoofing} classificam quadros
+com modelos supervisionados, o que exige rótulos de ataque. Falta, entre as duas
+linhas, um modelo leve que forneça o valor esperado de cada quadro, com uma
+sensibilidade medida em dB e um alarme falso controlado, e que rode no próprio
+\textit{gateway}. Este trabalho ocupa essa lacuna com os metadados de rádio do
+\textit{dataset} Tour Perret \cite{tourperret_dataset} e com a execução do
+detector num microcontrolador ESP32.

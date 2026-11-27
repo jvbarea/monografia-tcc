@@ -1,56 +1,68 @@
 \section{Requisitos do Sistema de Detecção de Anomalias}
-A incorporação de um modelo de aprendizado de máquina à arquitetura proposta 
-introduz requisitos específicos, distintos dos requisitos de infraestrutura 
-definidos na Seção~\ref{sec:requisitos_infra}. O modelo será treinado e 
-avaliado em ambiente computacional convencional, utilizando os dados 
-históricos do \textit{dataset} Tour Perret. A viabilidade de portabilidade 
-da fase de inferência para o gateway é tratada como perspectiva de 
-continuidade, conforme discutido na Seção~7.3.
+\label{sec:requisitos_ml}
+
+Esta seção especifica o detector de anomalias. Ele parte do RSSI que o
+\textit{gateway} mede em cada quadro, um dos metadados de recepção descritos na
+Seção~\ref{subsec:camada_fisica_lora} e registrados pela infraestrutura da
+Seção~\ref{sec:requisitos_infra}, e complementa a autenticação da
+Seção~\ref{sec:requisitos_seguranca}, que não indica de onde o sinal partiu. O
+modelo é estimado e avaliado com os dados do \textit{dataset} Tour Perret.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Requisitos Funcionais}
+\subsection{Requisitos funcionais do modelo de detecção}
 
 \begin{enumerate}
 
-    \item[RF1.] O sistema deve receber como entrada sequências temporais das 
-    variáveis selecionadas, organizadas por dispositivo e ordenadas 
-    cronologicamente.
+    \item[RF-M1.] O sistema deve prever o RSSI de cada quadro um passo à frente,
+    a partir dos quadros anteriores do mesmo nó sensor no mesmo
+    \textit{gateway}, com um modelo por canal de frequência.
 
-    \item[RF2.] O sistema deve produzir previsões do comportamento esperado de 
-    cada variável monitorada e calcular o resíduo entre valor previsto e 
-    valor observado para cada instante de tempo.
+    \item[RF-M2.] O sistema deve prever o RSSI com RMSE menor que o do
+    \textit{random walk} por canal.
 
-    \item[RF3.] O sistema deve classificar cada observação como normal ou 
-    potencialmente anômala, com base em um critério de limiarização definido 
-    a partir do conjunto de validação.
-
-    \item[RF4.] O sistema deve permitir comparação quantitativa entre as três 
-    abordagens de modelagem (ARIMA, RNN, LSTM) através de métricas 
-    padronizadas de qualidade de previsão e detecção.
+    \item[RF-M3.] O sistema deve sinalizar como anômalo o quadro cujo erro de
+    previsão passa do limiar do seu canal, calibrado no conjunto de validação.
 
 \end{enumerate}
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Requisitos Não Funcionais}
+\subsection{Requisitos não funcionais do modelo de detecção}
 
 \begin{enumerate}
 
-    \item[RNF1.] O treinamento deve ser realizado exclusivamente sobre dados que 
-    representem operação normal da rede, sem contaminação por observações 
-    potencialmente anômalas.
+    \item[RNF-M1.] O modelo deve atingir o desempenho do RF-M2 com no máximo 14
+    dias de quadros de treino.
 
-    \item[RNF2.] O processo de treinamento e avaliação deve ser reprodutível, com 
-    registro das sementes de inicialização, hiperparâmetros e critérios de 
-    seleção de ordem utilizados em cada modelo.
+    \item[RNF-M2.] O modelo deve ter no máximo dois parâmetros estimados por
+    canal, para caber num dispositivo de borda.
+
+    \item[RNF-M3.] Todo resultado deve ser reproduzível a partir do
+    \textit{dataset} bruto, conferido por resumo SHA-256.
 
 \end{enumerate}
 
-Essa orientação fortalece a coerência do trabalho como um todo. Em vez de separar artificialmente a fase de modelagem da fase de implantação, o desenvolvimento já considera que a utilidade prática dos modelos depende de um equilíbrio entre eficácia de detecção e viabilidade de execução em dispositivos restritos. Assim, a implementação proposta dialoga diretamente com a etapa posterior de avaliação energética e computacional.
+\subsection{Rastreabilidade dos requisitos de detecção}
 
-Sob essa perspectiva, a comparação entre modelos não deverá considerar apenas métricas tradicionais de desempenho, mas também aspectos como simplicidade estrutural, custo computacional, volume de memória.
+O Quadro~\ref{qua:rastreabilidade_ml} liga cada requisito à seção do
+Capítulo~\ref{cap:desenvolvimento} em que ele é verificado.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{quadro}[htb]
+	\centering
+	\caption{Rastreabilidade dos requisitos do modelo de detecção}
+	\label{qua:rastreabilidade_ml}
+	\begin{tabular}{lll}
+		\hline
+		\textbf{Requisito} & \textbf{Onde é verificado} & \textbf{Situação} \\
+		\hline
+		RF-M1 & Seção~\ref{subsec:ml-res-frequencia} & atendido \\
+		RF-M2 & Seção~\ref{subsec:ml-res-frequencia} & atendido no RMSE e no MAE \\
+		RF-M3 & Seção~\ref{subsec:ml-res-deteccao} & atendido com desvios sintéticos \\
+		RNF-M1 & Seção~\ref{subsec:ml-res-treino} & atendido na validação \\
+		RNF-M2 & Seção~\ref{subsec:ml-res-frequencia} & atendido \\
+		RNF-M3 & Seção~\ref{subsec:ml-res-serie} & atendido \\
+		\hline
+	\end{tabular}
+	\legend{Fonte: elaborado pelos autores.}
+\end{quadro}
